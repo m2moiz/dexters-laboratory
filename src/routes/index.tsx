@@ -315,10 +315,11 @@ function LiteratureGraphScreen() {
             nodeLabel={(node: ForceNode) => `${node.paper.title} (${node.paper.year})`}
             nodeVal={(node: ForceNode) => node.val}
             nodeCanvasObject={drawNode}
+            nodeCanvasObjectMode={() => "replace"}
             nodePointerAreaPaint={(node: ForceNode, color: string, ctx: CanvasRenderingContext2D) => {
               ctx.fillStyle = color;
               ctx.beginPath();
-              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
+              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 24, 0, Math.PI * 2);
               ctx.fill();
             }}
             linkCanvasObject={drawLink}
@@ -332,13 +333,16 @@ function LiteratureGraphScreen() {
             cooldownTicks={Infinity}
             autoPauseRedraw={false}
             enableNodeDrag
+            enablePointerInteraction
             showPointerCursor={(object: unknown) => Boolean(object)}
             onNodeHover={(node: ForceNode | null) => setHoveredNode(node)}
             onNodeClick={(node: ForceNode) => selectPaper(node.paper)}
+            onEngineStop={fitGraphToView}
             onNodeDragEnd={(node: ForceNode) => {
               node.fx = undefined;
               node.fy = undefined;
               graphRef.current?.d3ReheatSimulation();
+              window.setTimeout(fitGraphToView, 400);
             }}
             onBackgroundClick={() => selectPaper(null)}
           />
