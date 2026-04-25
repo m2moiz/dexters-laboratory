@@ -154,14 +154,16 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
-  const graphRef = useRef<ForceGraphHandle | undefined>(undefined);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
+  const transformRef = useRef({ scale: 1, x: 0, y: 0 });
+  const dragRef = useRef<ForceNode | null>(null);
+  const nodesRef = useRef<ForceNode[]>([]);
+  const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
-  const [ForceGraph, setForceGraph] = useState<ComponentType<Record<string, unknown>> | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
-  const fitGraphToView = useCallback(() => {
-    graphRef.current?.zoomToFit(650, Math.max(70, Math.min(graphSize.width, graphSize.height) * 0.12));
-  }, [graphSize.height, graphSize.width]);
+  const selectedId = selectedPaper?.id;
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
@@ -171,21 +173,13 @@ function LiteratureGraphScreen() {
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
+        x: paper.x,
+        y: paper.y,
       })),
-      links: plan.edges.map((edge) => ({ ...edge })),
+      links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
     }),
     [plan.edges, plan.papers],
   );
-
-  useEffect(() => {
-    let mounted = true;
-    import("react-force-graph-2d").then((module) => {
-      if (mounted) setForceGraph(() => module.default as ComponentType<Record<string, unknown>>);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     const updateSize = () => {
