@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCollide, forceLink, forceManyBody } from "d3-force";
 
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
-const graphNodeRadius = (influence: number) => 18 + influence * 18;
+const graphNodeRadius = (influence: number) => 16 + influence * 15;
 
 type ForceNode = {
   id: string;
