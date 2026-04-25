@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCollide, forceLink, forceManyBody } from "d3-force";
-import ForceGraph2D, {
-  type ForceGraphMethods,
-  type GraphData,
-  type LinkObject,
-  type NodeObject,
-} from "react-force-graph-2d";
+import type ForceGraph2D from "react-force-graph-2d";
+import type { ForceGraphMethods, GraphData, LinkObject, NodeObject } from "react-force-graph-2d";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -152,6 +148,7 @@ function LiteratureGraphScreen() {
   const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
+  const [ForceGraph, setForceGraph] = useState<typeof ForceGraph2D | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
 
   const graphData = useMemo<GraphData<ForceNode, ForceLink>>(
@@ -167,6 +164,16 @@ function LiteratureGraphScreen() {
     }),
     [plan.edges, plan.papers],
   );
+
+  useEffect(() => {
+    let mounted = true;
+    import("react-force-graph-2d").then((module) => {
+      if (mounted) setForceGraph(() => module.default);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const updateSize = () => {
@@ -196,7 +203,7 @@ function LiteratureGraphScreen() {
     );
     graph.d3ReheatSimulation();
     window.setTimeout(() => graph.zoomToFit(900, 90), 450);
-  }, [graphData]);
+  }, [ForceGraph, graphData]);
 
   const selectedId = selectedPaper?.id;
 
@@ -280,43 +287,49 @@ function LiteratureGraphScreen() {
         </Button>
       </header>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
-        <ForceGraph2D<ForceNode, ForceLink>
-          ref={graphRef}
-          graphData={graphData}
-          width={graphSize.width}
-          height={graphSize.height}
-          backgroundColor="rgba(252,247,236,1)"
-          nodeId="id"
-          nodeLabel={(node) => `${node.paper.title} (${node.paper.year})`}
-          nodeVal={(node) => node.val}
-          nodeCanvasObject={drawNode}
-          nodePointerAreaPaint={(node, color, ctx) => {
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
-            ctx.fill();
-          }}
-          linkCanvasObject={drawLink}
-          linkCanvasObjectMode={() => "replace"}
-          linkDirectionalParticles={(link) => Math.round(1 + link.weight * 3)}
-          linkDirectionalParticleSpeed={(link) => 0.003 + link.weight * 0.006}
-          linkDirectionalParticleWidth={(link) => 1.5 + link.weight * 3}
-          linkDirectionalParticleColor={(link) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
-          d3VelocityDecay={0.18}
-          d3AlphaDecay={0.015}
-          cooldownTicks={Infinity}
-          autoPauseRedraw={false}
-          enableNodeDrag
-          showPointerCursor={(object) => Boolean(object)}
-          onNodeHover={(node) => setHoveredNode(node)}
-          onNodeClick={(node) => selectPaper(node.paper)}
-          onNodeDragEnd={(node) => {
-            node.fx = undefined;
-            node.fy = undefined;
-            graphRef.current?.d3ReheatSimulation();
-          }}
-          onBackgroundClick={() => selectPaper(null)}
-        />
+        {ForceGraph ? (
+          <ForceGraph<ForceNode, ForceLink>
+            ref={graphRef}
+            graphData={graphData}
+            width={graphSize.width}
+            height={graphSize.height}
+            backgroundColor="rgba(252,247,236,1)"
+            nodeId="id"
+            nodeLabel={(node) => `${node.paper.title} (${node.paper.year})`}
+            nodeVal={(node) => node.val}
+            nodeCanvasObject={drawNode}
+            nodePointerAreaPaint={(node, color, ctx) => {
+              ctx.fillStyle = color;
+              ctx.beginPath();
+              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
+              ctx.fill();
+            }}
+            linkCanvasObject={drawLink}
+            linkCanvasObjectMode={() => "replace"}
+            linkDirectionalParticles={(link) => Math.round(1 + link.weight * 3)}
+            linkDirectionalParticleSpeed={(link) => 0.003 + link.weight * 0.006}
+            linkDirectionalParticleWidth={(link) => 1.5 + link.weight * 3}
+            linkDirectionalParticleColor={(link) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
+            d3VelocityDecay={0.18}
+            d3AlphaDecay={0.015}
+            cooldownTicks={Infinity}
+            autoPauseRedraw={false}
+            enableNodeDrag
+            showPointerCursor={(object) => Boolean(object)}
+            onNodeHover={(node) => setHoveredNode(node)}
+            onNodeClick={(node) => selectPaper(node.paper)}
+            onNodeDragEnd={(node) => {
+              node.fx = undefined;
+              node.fy = undefined;
+              graphRef.current?.d3ReheatSimulation();
+            }}
+            onBackgroundClick={() => selectPaper(null)}
+          />
+        ) : (
+          <div className="flex h-full items-center justify-center font-mono text-xs font-bold uppercase text-primary">
+            Initializing force topology...
+          </div>
+        )}
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>
