@@ -276,7 +276,9 @@ function LiteratureGraphScreen() {
       .velocityDecay(0.18);
 
     simulationRef.current = simulation;
-    return () => simulation.stop();
+    return () => {
+      simulation.stop();
+    };
   }, [graphData]);
 
   useEffect(() => {
@@ -344,53 +346,7 @@ function LiteratureGraphScreen() {
         </Button>
       </header>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
-        {ForceGraph ? (
-          <ForceGraph
-            ref={graphRef}
-            graphData={graphData}
-            width={graphSize.width}
-            height={graphSize.height}
-            backgroundColor="rgba(252,247,236,1)"
-            nodeId="id"
-            nodeLabel={(node: ForceNode) => `${node.paper.title} (${node.paper.year})`}
-            nodeVal={(node: ForceNode) => node.val}
-            nodeCanvasObject={drawNode}
-            nodeCanvasObjectMode={() => "replace"}
-            nodePointerAreaPaint={(node: ForceNode, color: string, ctx: CanvasRenderingContext2D) => {
-              ctx.fillStyle = color;
-              ctx.beginPath();
-              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 24, 0, Math.PI * 2);
-              ctx.fill();
-            }}
-            linkCanvasObject={drawLink}
-            linkCanvasObjectMode={() => "replace"}
-            linkDirectionalParticles={(link: ForceLink) => Math.round(1 + link.weight * 3)}
-            linkDirectionalParticleSpeed={(link: ForceLink) => 0.003 + link.weight * 0.006}
-            linkDirectionalParticleWidth={(link: ForceLink) => 1.5 + link.weight * 3}
-            linkDirectionalParticleColor={(link: ForceLink) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
-            d3VelocityDecay={0.18}
-            d3AlphaDecay={0.015}
-            cooldownTicks={Infinity}
-            autoPauseRedraw={false}
-            enableNodeDrag
-            enablePointerInteraction
-            showPointerCursor={(object: unknown) => Boolean(object)}
-            onNodeHover={(node: ForceNode | null) => setHoveredNode(node)}
-            onNodeClick={(node: ForceNode) => selectPaper(node.paper)}
-            onEngineStop={fitGraphToView}
-            onNodeDragEnd={(node: ForceNode) => {
-              node.fx = undefined;
-              node.fy = undefined;
-              graphRef.current?.d3ReheatSimulation();
-              window.setTimeout(fitGraphToView, 400);
-            }}
-            onBackgroundClick={() => selectPaper(null)}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center font-mono text-xs font-bold uppercase text-primary">
-            Initializing force topology...
-          </div>
-        )}
+        <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>
