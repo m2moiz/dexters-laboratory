@@ -169,4 +169,27 @@
   .dexter-cta-shadow:hover {
     transform: translate(-2px, -2px);
   }
+
+  .dexter-flow .react-flow__pane {
+    cursor: grab;
+  }
+
+  .dexter-flow .react-flow__pane:active {
+    cursor: grabbing;
+  }
+
+  .dexter-flow .react-flow__node {
+    transition:
+      transform 160ms ease,
+      box-shadow 160ms ease,
+      background-color 160ms ease;
+  }
+
+  .dexter-flow .react-flow__node:hover {
+    filter: saturate(1.12);
+  }
+
+  .dexter-flow .react-flow__edge.animated path {
+    animation-duration: 1.2s;
+  }
 }
