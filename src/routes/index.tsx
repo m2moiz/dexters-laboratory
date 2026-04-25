@@ -29,6 +29,7 @@ export const Route = createFileRoute("/")({
 
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 16 + influence * 15;
+const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
 
 type ForceNode = {
   id: string;
