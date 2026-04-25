@@ -239,10 +239,16 @@ function LiteratureGraphScreen() {
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
+    const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
     const x = node.x ?? 0;
     const y = node.y ?? 0;
 
     ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 8 + breath * 8, 0, Math.PI * 2);
+    ctx.fillStyle = hovered || selected ? "rgba(199, 62, 58, 0.14)" : "rgba(27, 122, 143, 0.1)";
+    ctx.fill();
+
     ctx.beginPath();
     ctx.arc(x + 5, y + 5, radius, 0, Math.PI * 2);
     ctx.fillStyle = "#1A1A1A";
