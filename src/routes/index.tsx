@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  Background,
-  Controls,
-  ReactFlow,
-  type Edge,
-  type Node,
-  type NodeMouseHandler,
-  type OnNodeDrag,
-  useEdgesState,
-  useNodesState,
-} from "@xyflow/react";
-import "@xyflow/react/dist/style.css";
+import { forceCollide, forceLink, forceManyBody } from "d3-force";
+import ForceGraph2D, {
+  type ForceGraphMethods,
+  type GraphData,
+  type LinkObject,
+  type NodeObject,
+} from "react-force-graph-2d";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -39,7 +34,7 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
-const nodeSize = (influence: number) => 78 + influence * 70;
+const graphNodeRadius = (influence: number) => 18 + influence * 18;
 
 function DexterApp() {
   const currentScreen = useDexterStore((state) => state.currentScreen);
