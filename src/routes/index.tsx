@@ -398,8 +398,11 @@ function LiteratureGraphScreen() {
 
     const onPointerMove = (event: PointerEvent) => {
       if (dragRef.current) {
+        if (pointerDownRef.current && Math.hypot(event.clientX - pointerDownRef.current.x, event.clientY - pointerDownRef.current.y) > 4) {
+          pointerDownRef.current.didDrag = true;
+        }
         moveNodeTo(dragRef.current, event);
-        simulationRef.current?.alpha(0.28).restart();
+        simulationRef.current?.alpha(0.18).restart();
         return;
       }
       const nextHovered = getNodeAt(event) ?? null;
@@ -415,22 +418,28 @@ function LiteratureGraphScreen() {
         return;
       }
       dragRef.current = node;
+      pointerDownRef.current = { node, x: event.clientX, y: event.clientY, didDrag: false };
       canvas.setPointerCapture(event.pointerId);
       moveNodeTo(node, event);
-      setVisitedNodeIds((current) => new Set(current).add(node.id));
       setHoveredNode(null);
-      selectPaper(node.paper);
-      simulationRef.current?.alpha(0.35).restart();
+      simulationRef.current?.alpha(0.18).restart();
       canvas.style.cursor = "grabbing";
     };
 
     const onPointerUp = (event: PointerEvent) => {
+      const pointerDown = pointerDownRef.current;
       if (dragRef.current) {
         dragRef.current.fx = undefined;
         dragRef.current.fy = undefined;
         dragRef.current = null;
-        simulationRef.current?.alpha(0.22).restart();
+        simulationRef.current?.alpha(0.14).restart();
       }
+      if (pointerDown && !pointerDown.didDrag) {
+        setVisitedNodeIds((current) => new Set(current).add(pointerDown.node.id));
+        setHoveredNode(null);
+        selectPaper(pointerDown.node.paper);
+      }
+      pointerDownRef.current = null;
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     };
 
