@@ -1,12 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCollide, forceLink, forceManyBody } from "d3-force";
-import ForceGraph2D, {
-  type ForceGraphMethods,
-  type GraphData,
-  type LinkObject,
-  type NodeObject,
-} from "react-force-graph-2d";
+import type ForceGraph2D from "react-force-graph-2d";
+import type { ForceGraphMethods, GraphData, LinkObject, NodeObject } from "react-force-graph-2d";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -152,6 +148,7 @@ function LiteratureGraphScreen() {
   const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
+  const [ForceGraph, setForceGraph] = useState<typeof ForceGraph2D | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
 
   const graphData = useMemo<GraphData<ForceNode, ForceLink>>(
@@ -167,6 +164,16 @@ function LiteratureGraphScreen() {
     }),
     [plan.edges, plan.papers],
   );
+
+  useEffect(() => {
+    let mounted = true;
+    import("react-force-graph-2d").then((module) => {
+      if (mounted) setForceGraph(() => module.default);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     const updateSize = () => {
@@ -196,7 +203,7 @@ function LiteratureGraphScreen() {
     );
     graph.d3ReheatSimulation();
     window.setTimeout(() => graph.zoomToFit(900, 90), 450);
-  }, [graphData]);
+  }, [ForceGraph, graphData]);
 
   const selectedId = selectedPaper?.id;
 
