@@ -363,6 +363,7 @@ function LiteratureGraphScreen() {
         return;
       }
       const nextHovered = getNodeAt(event) ?? null;
+      setHoverCardPosition({ x: event.clientX, y: event.clientY });
       setHoveredNode((current) => (current?.id === nextHovered?.id ? current : nextHovered));
       canvas.style.cursor = nextHovered ? "grab" : "default";
     };
@@ -376,6 +377,7 @@ function LiteratureGraphScreen() {
       dragRef.current = node;
       canvas.setPointerCapture(event.pointerId);
       moveNodeTo(node, event);
+      setVisitedNodeIds((current) => new Set(current).add(node.id));
       selectPaper(node.paper);
       simulationRef.current?.alpha(0.35).restart();
       canvas.style.cursor = "grabbing";
@@ -422,7 +424,8 @@ function LiteratureGraphScreen() {
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>
-        <PaperPanel paper={selectedPaper} onClose={() => selectPaper(null)} />
+        <PaperHoverCard node={hoveredNode} position={hoverCardPosition} />
+        <PaperDetailOverlay paper={selectedPaper} onClose={() => selectPaper(null)} />
       </section>
     </main>
   );
