@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { forceCollide, forceLink, forceManyBody } from "d3-force";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,21 +38,17 @@ type ForceNode = {
   val: number;
   x?: number;
   y?: number;
+  vx?: number;
+  vy?: number;
   fx?: number;
   fy?: number;
 };
 
-type ForceLink = { id: string; source?: string | ForceNode; target?: string | ForceNode; weight: number };
+type ForceLink = { id: string; source: string | ForceNode; target: string | ForceNode; weight: number };
 
 type ForceGraphData = {
   nodes: ForceNode[];
   links: ForceLink[];
-};
-
-type ForceGraphHandle = {
-  d3Force: (name: string, force?: unknown) => unknown;
-  d3ReheatSimulation: () => unknown;
-  zoomToFit: (durationMs?: number, padding?: number) => unknown;
 };
 
 function DexterApp() {
