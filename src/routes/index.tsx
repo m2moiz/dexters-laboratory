@@ -300,6 +300,14 @@ function LiteratureGraphScreen() {
 
     const render = (time: number) => {
       const nodes = nodesRef.current;
+      nodes.forEach((node, index) => {
+        if (node !== dragRef.current) {
+          const orbit = Math.atan2(node.y ?? 0, node.x ?? 0) + Math.PI / 2;
+          node.vx = (node.vx ?? 0) + Math.cos(orbit) * 0.014 + Math.sin(time / 700 + index * 1.9) * 0.018;
+          node.vy = (node.vy ?? 0) + Math.sin(orbit) * 0.014 + Math.cos(time / 760 + index * 1.4) * 0.018;
+        }
+      });
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 90;
@@ -321,13 +329,7 @@ function LiteratureGraphScreen() {
       ctx.translate(transformRef.current.x, transformRef.current.y);
       ctx.scale(scale, scale);
       linksRef.current.forEach((link) => drawLink(link, ctx, time));
-      nodes.forEach((node, index) => {
-        if (node !== dragRef.current) {
-          node.vx = (node.vx ?? 0) + Math.sin(time / 900 + index * 1.7) * 0.012;
-          node.vy = (node.vy ?? 0) + Math.cos(time / 850 + index * 1.3) * 0.012;
-        }
-        drawNode(node, ctx);
-      });
+      nodes.forEach((node) => drawNode(node, ctx));
       ctx.restore();
       animation = requestAnimationFrame(render);
     };
