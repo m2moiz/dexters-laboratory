@@ -36,6 +36,7 @@ type ForceNode = {
   influence: number;
   shortLabel: string;
   val: number;
+  phase: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -175,6 +176,7 @@ function LiteratureGraphScreen() {
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
+        phase: indexFromPaperId(paper.id) * 1.37,
         x: paper.x,
         y: paper.y,
       })),
