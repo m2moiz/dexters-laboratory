@@ -6,7 +6,10 @@ import {
   ReactFlow,
   type Edge,
   type Node,
+  type NodeDragHandler,
   type NodeMouseHandler,
+  useEdgesState,
+  useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -36,6 +39,7 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
+const nodeSize = (influence: number) => 78 + influence * 70;
 
 function DexterApp() {
   const currentScreen = useDexterStore((state) => state.currentScreen);
