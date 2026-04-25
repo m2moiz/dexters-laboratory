@@ -191,30 +191,7 @@ function LiteratureGraphScreen() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (!graph) return;
-
-    graph.d3Force(
-      "link",
-      forceLink<ForceNode, ForceLink & { source: string | ForceNode; target: string | ForceNode }>()
-        .id((node) => String(node.id))
-        .distance((link) => 220 - link.weight * 95)
-        .strength((link) => 0.06 + link.weight * 0.24),
-    );
-    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -430 - node.influence * 280));
-    graph.d3Force(
-      "collide",
-      forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 34).strength(1),
-    );
-    graph.d3ReheatSimulation();
-    window.setTimeout(fitGraphToView, 250);
-    window.setTimeout(fitGraphToView, 950);
-  }, [ForceGraph, fitGraphToView, graphData]);
-
-  const selectedId = selectedPaper?.id;
-
-  const drawLink = (link: ForceLink, ctx: CanvasRenderingContext2D) => {
+  const drawLink = (link: ForceLink, ctx: CanvasRenderingContext2D, time: number) => {
     const source = link.source as ForceNode;
     const target = link.target as ForceNode;
     if (typeof source.x !== "number" || typeof source.y !== "number" || typeof target.x !== "number" || typeof target.y !== "number") return;
@@ -225,7 +202,7 @@ function LiteratureGraphScreen() {
     const mx = (source.x + target.x) / 2 - dy * curve;
     const my = (source.y + target.y) / 2 + dx * curve;
     const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedId === source.id || selectedId === target.id;
-    const pulse = (Math.sin(Date.now() / 420 + link.weight * 9) + 1) / 2;
+    const pulse = (Math.sin(time / 420 + link.weight * 9) + 1) / 2;
 
     ctx.save();
     ctx.beginPath();
@@ -244,7 +221,7 @@ function LiteratureGraphScreen() {
     ctx.restore();
   };
 
-  const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D) => {
     const radius = graphNodeRadius(node.influence);
     const selected = node.id === selectedId;
     const hovered = node.id === hoveredNode?.id;
@@ -268,12 +245,12 @@ function LiteratureGraphScreen() {
     ctx.fillStyle = selected || hovered ? "#FFFDF6" : "#1A1A1A";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = `${Math.max(9, 12 / globalScale)}px var(--font-mono)`;
+    ctx.font = "12px var(--font-mono)";
     ctx.fillText(node.shortLabel, x, y - 4);
-    ctx.font = `${Math.max(7, 8 / globalScale)}px var(--font-mono)`;
+    ctx.font = "8px var(--font-mono)";
     ctx.fillText(`${Math.round(node.influence * 100)} INF`, x, y + 10);
 
-    ctx.font = `${Math.max(8, 9 / globalScale)}px var(--font-mono)`;
+    ctx.font = "9px var(--font-mono)";
     ctx.fillStyle = "#1A1A1A";
     ctx.fillText(node.paper.year.toString(), x, y + radius + 14);
     ctx.restore();
