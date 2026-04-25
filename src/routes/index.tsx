@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { forceCollide, forceLink, forceManyBody } from "d3-force";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -38,21 +38,17 @@ type ForceNode = {
   val: number;
   x?: number;
   y?: number;
+  vx?: number;
+  vy?: number;
   fx?: number;
   fy?: number;
 };
 
-type ForceLink = { id: string; source?: string | ForceNode; target?: string | ForceNode; weight: number };
+type ForceLink = { id: string; source: string | ForceNode; target: string | ForceNode; weight: number };
 
 type ForceGraphData = {
   nodes: ForceNode[];
   links: ForceLink[];
-};
-
-type ForceGraphHandle = {
-  d3Force: (name: string, force?: unknown) => unknown;
-  d3ReheatSimulation: () => unknown;
-  zoomToFit: (durationMs?: number, padding?: number) => unknown;
 };
 
 function DexterApp() {
@@ -158,14 +154,16 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
-  const graphRef = useRef<ForceGraphHandle | undefined>(undefined);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
+  const transformRef = useRef({ scale: 1, x: 0, y: 0 });
+  const dragRef = useRef<ForceNode | null>(null);
+  const nodesRef = useRef<ForceNode[]>([]);
+  const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
-  const [ForceGraph, setForceGraph] = useState<ComponentType<Record<string, unknown>> | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
-  const fitGraphToView = useCallback(() => {
-    graphRef.current?.zoomToFit(650, Math.max(70, Math.min(graphSize.width, graphSize.height) * 0.12));
-  }, [graphSize.height, graphSize.width]);
+  const selectedId = selectedPaper?.id;
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
@@ -175,21 +173,13 @@ function LiteratureGraphScreen() {
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
+        x: paper.x,
+        y: paper.y,
       })),
-      links: plan.edges.map((edge) => ({ ...edge })),
+      links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
     }),
     [plan.edges, plan.papers],
   );
-
-  useEffect(() => {
-    let mounted = true;
-    import("react-force-graph-2d").then((module) => {
-      if (mounted) setForceGraph(() => module.default as ComponentType<Record<string, unknown>>);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, []);
 
   useEffect(() => {
     const updateSize = () => {
@@ -201,30 +191,7 @@ function LiteratureGraphScreen() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (!graph) return;
-
-    graph.d3Force(
-      "link",
-      forceLink<ForceNode, ForceLink & { source: string | ForceNode; target: string | ForceNode }>()
-        .id((node) => String(node.id))
-        .distance((link) => 220 - link.weight * 95)
-        .strength((link) => 0.06 + link.weight * 0.24),
-    );
-    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -430 - node.influence * 280));
-    graph.d3Force(
-      "collide",
-      forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 34).strength(1),
-    );
-    graph.d3ReheatSimulation();
-    window.setTimeout(fitGraphToView, 250);
-    window.setTimeout(fitGraphToView, 950);
-  }, [ForceGraph, fitGraphToView, graphData]);
-
-  const selectedId = selectedPaper?.id;
-
-  const drawLink = (link: ForceLink, ctx: CanvasRenderingContext2D) => {
+  const drawLink = (link: ForceLink, ctx: CanvasRenderingContext2D, time: number) => {
     const source = link.source as ForceNode;
     const target = link.target as ForceNode;
     if (typeof source.x !== "number" || typeof source.y !== "number" || typeof target.x !== "number" || typeof target.y !== "number") return;
@@ -235,7 +202,7 @@ function LiteratureGraphScreen() {
     const mx = (source.x + target.x) / 2 - dy * curve;
     const my = (source.y + target.y) / 2 + dx * curve;
     const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedId === source.id || selectedId === target.id;
-    const pulse = (Math.sin(Date.now() / 420 + link.weight * 9) + 1) / 2;
+    const pulse = (Math.sin(time / 420 + link.weight * 9) + 1) / 2;
 
     ctx.save();
     ctx.beginPath();
@@ -254,7 +221,7 @@ function LiteratureGraphScreen() {
     ctx.restore();
   };
 
-  const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+  const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D) => {
     const radius = graphNodeRadius(node.influence);
     const selected = node.id === selectedId;
     const hovered = node.id === hoveredNode?.id;
@@ -278,16 +245,159 @@ function LiteratureGraphScreen() {
     ctx.fillStyle = selected || hovered ? "#FFFDF6" : "#1A1A1A";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.font = `${Math.max(9, 12 / globalScale)}px var(--font-mono)`;
+    ctx.font = "12px var(--font-mono)";
     ctx.fillText(node.shortLabel, x, y - 4);
-    ctx.font = `${Math.max(7, 8 / globalScale)}px var(--font-mono)`;
+    ctx.font = "8px var(--font-mono)";
     ctx.fillText(`${Math.round(node.influence * 100)} INF`, x, y + 10);
 
-    ctx.font = `${Math.max(8, 9 / globalScale)}px var(--font-mono)`;
+    ctx.font = "9px var(--font-mono)";
     ctx.fillStyle = "#1A1A1A";
     ctx.fillText(node.paper.year.toString(), x, y + radius + 14);
     ctx.restore();
   };
+
+  useEffect(() => {
+    nodesRef.current = graphData.nodes.map((node) => ({ ...node }));
+    linksRef.current = graphData.links.map((link) => ({ ...link }));
+
+    const simulation = forceSimulation<ForceNode>(nodesRef.current)
+      .force(
+        "link",
+        forceLink<ForceNode, ForceLink>(linksRef.current)
+          .id((node) => node.id)
+          .distance((link) => 210 - link.weight * 95)
+          .strength((link) => 0.06 + link.weight * 0.22),
+      )
+      .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(1))
+      .force("center", forceCenter(0, 0))
+      .alpha(0.95)
+      .alphaDecay(0.002)
+      .velocityDecay(0.18);
+
+    simulationRef.current = simulation;
+    return () => {
+      simulation.stop();
+    };
+  }, [graphData]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animation = 0;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = graphSize.width * dpr;
+    canvas.height = graphSize.height * dpr;
+    canvas.style.width = `${graphSize.width}px`;
+    canvas.style.height = `${graphSize.height}px`;
+
+    const render = (time: number) => {
+      const nodes = nodesRef.current;
+      const xs = nodes.map((node) => node.x ?? 0);
+      const ys = nodes.map((node) => node.y ?? 0);
+      const minX = Math.min(...xs) - 90;
+      const maxX = Math.max(...xs) + 90;
+      const minY = Math.min(...ys) - 90;
+      const maxY = Math.max(...ys) + 90;
+      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
+      transformRef.current = {
+        scale,
+        x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
+        y: graphSize.height / 2 - ((minY + maxY) / 2) * scale,
+      };
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, graphSize.width, graphSize.height);
+      ctx.fillStyle = "#FCF7EC";
+      ctx.fillRect(0, 0, graphSize.width, graphSize.height);
+      ctx.save();
+      ctx.translate(transformRef.current.x, transformRef.current.y);
+      ctx.scale(scale, scale);
+      linksRef.current.forEach((link) => drawLink(link, ctx, time));
+      nodes.forEach((node, index) => {
+        if (node !== dragRef.current) {
+          node.vx = (node.vx ?? 0) + Math.sin(time / 900 + index * 1.7) * 0.012;
+          node.vy = (node.vy ?? 0) + Math.cos(time / 850 + index * 1.3) * 0.012;
+        }
+        drawNode(node, ctx);
+      });
+      ctx.restore();
+      animation = requestAnimationFrame(render);
+    };
+    animation = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animation);
+  }, [drawLink, drawNode, graphSize.height, graphSize.width]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const getNodeAt = (event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const transform = transformRef.current;
+      const x = (event.clientX - bounds.left - transform.x) / transform.scale;
+      const y = (event.clientY - bounds.top - transform.y) / transform.scale;
+      return [...nodesRef.current]
+        .reverse()
+        .find((node) => Math.hypot((node.x ?? 0) - x, (node.y ?? 0) - y) <= graphNodeRadius(node.influence) + 18);
+    };
+
+    const moveNodeTo = (node: ForceNode, event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const transform = transformRef.current;
+      node.fx = (event.clientX - bounds.left - transform.x) / transform.scale;
+      node.fy = (event.clientY - bounds.top - transform.y) / transform.scale;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (dragRef.current) {
+        moveNodeTo(dragRef.current, event);
+        simulationRef.current?.alpha(0.28).restart();
+        return;
+      }
+      const nextHovered = getNodeAt(event) ?? null;
+      setHoveredNode((current) => (current?.id === nextHovered?.id ? current : nextHovered));
+      canvas.style.cursor = nextHovered ? "grab" : "default";
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      const node = getNodeAt(event);
+      if (!node) {
+        selectPaper(null);
+        return;
+      }
+      dragRef.current = node;
+      canvas.setPointerCapture(event.pointerId);
+      moveNodeTo(node, event);
+      selectPaper(node.paper);
+      simulationRef.current?.alpha(0.35).restart();
+      canvas.style.cursor = "grabbing";
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (dragRef.current) {
+        dragRef.current.fx = undefined;
+        dragRef.current.fy = undefined;
+        dragRef.current = null;
+        simulationRef.current?.alpha(0.22).restart();
+      }
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    };
+
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointerleave", onPointerUp);
+    return () => {
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointerleave", onPointerUp);
+    };
+  }, [selectPaper]);
 
   return (
     <main className={screenClass}>
@@ -304,53 +414,7 @@ function LiteratureGraphScreen() {
         </Button>
       </header>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
-        {ForceGraph ? (
-          <ForceGraph
-            ref={graphRef}
-            graphData={graphData}
-            width={graphSize.width}
-            height={graphSize.height}
-            backgroundColor="rgba(252,247,236,1)"
-            nodeId="id"
-            nodeLabel={(node: ForceNode) => `${node.paper.title} (${node.paper.year})`}
-            nodeVal={(node: ForceNode) => node.val}
-            nodeCanvasObject={drawNode}
-            nodeCanvasObjectMode={() => "replace"}
-            nodePointerAreaPaint={(node: ForceNode, color: string, ctx: CanvasRenderingContext2D) => {
-              ctx.fillStyle = color;
-              ctx.beginPath();
-              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 24, 0, Math.PI * 2);
-              ctx.fill();
-            }}
-            linkCanvasObject={drawLink}
-            linkCanvasObjectMode={() => "replace"}
-            linkDirectionalParticles={(link: ForceLink) => Math.round(1 + link.weight * 3)}
-            linkDirectionalParticleSpeed={(link: ForceLink) => 0.003 + link.weight * 0.006}
-            linkDirectionalParticleWidth={(link: ForceLink) => 1.5 + link.weight * 3}
-            linkDirectionalParticleColor={(link: ForceLink) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
-            d3VelocityDecay={0.18}
-            d3AlphaDecay={0.015}
-            cooldownTicks={Infinity}
-            autoPauseRedraw={false}
-            enableNodeDrag
-            enablePointerInteraction
-            showPointerCursor={(object: unknown) => Boolean(object)}
-            onNodeHover={(node: ForceNode | null) => setHoveredNode(node)}
-            onNodeClick={(node: ForceNode) => selectPaper(node.paper)}
-            onEngineStop={fitGraphToView}
-            onNodeDragEnd={(node: ForceNode) => {
-              node.fx = undefined;
-              node.fy = undefined;
-              graphRef.current?.d3ReheatSimulation();
-              window.setTimeout(fitGraphToView, 400);
-            }}
-            onBackgroundClick={() => selectPaper(null)}
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center font-mono text-xs font-bold uppercase text-primary">
-            Initializing force topology...
-          </div>
-        )}
+        <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>
