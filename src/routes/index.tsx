@@ -149,7 +149,7 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
-  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>();
+  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
@@ -184,7 +184,7 @@ function LiteratureGraphScreen() {
 
     graph.d3Force(
       "link",
-      forceLink<ForceNode, ForceLink>()
+      forceLink<ForceNode, ForceLink & { source: string | ForceNode; target: string | ForceNode }>()
         .id((node) => String(node.id))
         .distance((link) => 340 - link.weight * 185)
         .strength((link) => 0.08 + link.weight * 0.34),
