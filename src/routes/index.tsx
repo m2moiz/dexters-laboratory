@@ -331,6 +331,74 @@ function LiteratureGraphScreen() {
     return () => cancelAnimationFrame(animation);
   }, [drawLink, drawNode, graphSize.height, graphSize.width]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const getNodeAt = (event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const transform = transformRef.current;
+      const x = (event.clientX - bounds.left - transform.x) / transform.scale;
+      const y = (event.clientY - bounds.top - transform.y) / transform.scale;
+      return [...nodesRef.current]
+        .reverse()
+        .find((node) => Math.hypot((node.x ?? 0) - x, (node.y ?? 0) - y) <= graphNodeRadius(node.influence) + 18);
+    };
+
+    const moveNodeTo = (node: ForceNode, event: PointerEvent) => {
+      const bounds = canvas.getBoundingClientRect();
+      const transform = transformRef.current;
+      node.fx = (event.clientX - bounds.left - transform.x) / transform.scale;
+      node.fy = (event.clientY - bounds.top - transform.y) / transform.scale;
+    };
+
+    const onPointerMove = (event: PointerEvent) => {
+      if (dragRef.current) {
+        moveNodeTo(dragRef.current, event);
+        simulationRef.current?.alpha(0.28).restart();
+        return;
+      }
+      const nextHovered = getNodeAt(event) ?? null;
+      setHoveredNode((current) => (current?.id === nextHovered?.id ? current : nextHovered));
+      canvas.style.cursor = nextHovered ? "grab" : "default";
+    };
+
+    const onPointerDown = (event: PointerEvent) => {
+      const node = getNodeAt(event);
+      if (!node) {
+        selectPaper(null);
+        return;
+      }
+      dragRef.current = node;
+      canvas.setPointerCapture(event.pointerId);
+      moveNodeTo(node, event);
+      selectPaper(node.paper);
+      simulationRef.current?.alpha(0.35).restart();
+      canvas.style.cursor = "grabbing";
+    };
+
+    const onPointerUp = (event: PointerEvent) => {
+      if (dragRef.current) {
+        dragRef.current.fx = undefined;
+        dragRef.current.fy = undefined;
+        dragRef.current = null;
+        simulationRef.current?.alpha(0.22).restart();
+      }
+      if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+    };
+
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointerleave", onPointerUp);
+    return () => {
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointerleave", onPointerUp);
+    };
+  }, [selectPaper]);
+
   return (
     <main className={screenClass}>
       <header className="flex h-[60px] items-center justify-between border-b-2 border-industrial bg-background px-5">
