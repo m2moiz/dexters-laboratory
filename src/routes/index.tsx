@@ -163,6 +163,9 @@ function LiteratureGraphScreen() {
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const [ForceGraph, setForceGraph] = useState<ComponentType<Record<string, unknown>> | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
+  const fitGraphToView = useCallback(() => {
+    graphRef.current?.zoomToFit(650, Math.max(70, Math.min(graphSize.width, graphSize.height) * 0.12));
+  }, [graphSize.height, graphSize.width]);
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
@@ -206,17 +209,18 @@ function LiteratureGraphScreen() {
       "link",
       forceLink<ForceNode, ForceLink & { source: string | ForceNode; target: string | ForceNode }>()
         .id((node) => String(node.id))
-        .distance((link) => 340 - link.weight * 185)
-        .strength((link) => 0.08 + link.weight * 0.34),
+        .distance((link) => 220 - link.weight * 95)
+        .strength((link) => 0.06 + link.weight * 0.24),
     );
-    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -620 - node.influence * 420));
+    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -430 - node.influence * 280));
     graph.d3Force(
       "collide",
       forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 34).strength(1),
     );
     graph.d3ReheatSimulation();
-    window.setTimeout(() => graph.zoomToFit(900, 90), 450);
-  }, [ForceGraph, graphData]);
+    window.setTimeout(fitGraphToView, 250);
+    window.setTimeout(fitGraphToView, 950);
+  }, [ForceGraph, fitGraphToView, graphData]);
 
   const selectedId = selectedPaper?.id;
 
