@@ -13,6 +13,7 @@ export type Paper = {
   abstract: string;
   x: number;
   y: number;
+  influence: number;
 };
 
 export type PlanSection = {
@@ -29,7 +30,7 @@ export type DexterPlan = {
   citations: string[];
   comments: string[];
   papers: Paper[];
-  edges: { id: string; source: string; target: string }[];
+  edges: { id: string; source: string; target: string; weight: number }[];
   activity: string[];
 };
 
