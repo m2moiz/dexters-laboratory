@@ -160,6 +160,7 @@ function LiteratureGraphScreen() {
   const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
   const dragRef = useRef<ForceNode | null>(null);
+  const pointerDownRef = useRef<{ node: ForceNode; x: number; y: number; didDrag: boolean } | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
   const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
@@ -290,12 +291,12 @@ function LiteratureGraphScreen() {
           .strength((link) => 0.06 + link.weight * 0.22),
       )
       .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
-      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(1))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(0.82))
       .force("center", forceCenter(0, 0))
       .alpha(1)
-      .alphaDecay(0.0007)
+      .alphaDecay(0.0016)
       .alphaMin(0.08)
-      .velocityDecay(0.09);
+      .velocityDecay(0.18);
 
     simulationRef.current = simulation;
     return () => {
@@ -324,22 +325,22 @@ function LiteratureGraphScreen() {
           const y = node.y ?? 0;
           const distance = Math.max(Math.hypot(x, y), 1);
           const orbit = Math.atan2(y, x) + Math.PI / 2;
-          const orbitalForce = 0.052 + node.influence * 0.028;
-          const waveForce = 0.065;
-          const centerPull = Math.min(distance, 420) * 0.00016;
+          const orbitalForce = 0.024 + node.influence * 0.014;
+          const waveForce = 0.026;
+          const centerPull = Math.min(distance, 420) * 0.00012;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
-            Math.sin(time / 360 + node.phase + index * 1.7) * waveForce -
+            Math.sin(time / 820 + node.phase + index * 1.7) * waveForce -
             (x / distance) * centerPull;
           node.vy =
             (node.vy ?? 0) +
             Math.sin(orbit) * orbitalForce +
-            Math.cos(time / 410 + node.phase + index * 1.2) * waveForce -
+            Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
             (y / distance) * centerPull;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.24)).tick(2);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 90;
@@ -347,10 +348,15 @@ function LiteratureGraphScreen() {
       const minY = Math.min(...ys) - 90;
       const maxY = Math.max(...ys) + 90;
       const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
-      transformRef.current = {
+      const nextTransform = {
         scale,
         x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
         y: graphSize.height / 2 - ((minY + maxY) / 2) * scale,
+      };
+      transformRef.current = {
+        scale: transformRef.current.scale + (nextTransform.scale - transformRef.current.scale) * 0.08,
+        x: transformRef.current.x + (nextTransform.x - transformRef.current.x) * 0.08,
+        y: transformRef.current.y + (nextTransform.y - transformRef.current.y) * 0.08,
       };
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -359,7 +365,7 @@ function LiteratureGraphScreen() {
       ctx.fillRect(0, 0, graphSize.width, graphSize.height);
       ctx.save();
       ctx.translate(transformRef.current.x, transformRef.current.y);
-      ctx.scale(scale, scale);
+      ctx.scale(transformRef.current.scale, transformRef.current.scale);
       linksRef.current.forEach((link) => drawLink(link, ctx, time));
       nodes.forEach((node) => drawNode(node, ctx));
       ctx.restore();
@@ -392,8 +398,11 @@ function LiteratureGraphScreen() {
 
     const onPointerMove = (event: PointerEvent) => {
       if (dragRef.current) {
+        if (pointerDownRef.current && Math.hypot(event.clientX - pointerDownRef.current.x, event.clientY - pointerDownRef.current.y) > 4) {
+          pointerDownRef.current.didDrag = true;
+        }
         moveNodeTo(dragRef.current, event);
-        simulationRef.current?.alpha(0.28).restart();
+        simulationRef.current?.alpha(0.18).restart();
         return;
       }
       const nextHovered = getNodeAt(event) ?? null;
@@ -409,22 +418,28 @@ function LiteratureGraphScreen() {
         return;
       }
       dragRef.current = node;
+      pointerDownRef.current = { node, x: event.clientX, y: event.clientY, didDrag: false };
       canvas.setPointerCapture(event.pointerId);
       moveNodeTo(node, event);
-      setVisitedNodeIds((current) => new Set(current).add(node.id));
       setHoveredNode(null);
-      selectPaper(node.paper);
-      simulationRef.current?.alpha(0.35).restart();
+      simulationRef.current?.alpha(0.18).restart();
       canvas.style.cursor = "grabbing";
     };
 
     const onPointerUp = (event: PointerEvent) => {
+      const pointerDown = pointerDownRef.current;
       if (dragRef.current) {
         dragRef.current.fx = undefined;
         dragRef.current.fy = undefined;
         dragRef.current = null;
-        simulationRef.current?.alpha(0.22).restart();
+        simulationRef.current?.alpha(0.14).restart();
       }
+      if (pointerDown && !pointerDown.didDrag) {
+        setVisitedNodeIds((current) => new Set(current).add(pointerDown.node.id));
+        setHoveredNode(null);
+        selectPaper(pointerDown.node.paper);
+      }
+      pointerDownRef.current = null;
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
     };
 
