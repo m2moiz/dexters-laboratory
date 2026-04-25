@@ -207,7 +207,10 @@ function LiteratureGraphScreen() {
     const mx = (source.x + target.x) / 2 - dy * curve;
     const my = (source.y + target.y) / 2 + dx * curve;
     const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedPaperId === source.id || selectedPaperId === target.id;
-    const pulse = (Math.sin(time / 420 + link.weight * 9) + 1) / 2;
+    const pulse = (Math.sin(time / 240 + link.weight * 9) + 1) / 2;
+    const particleProgress = (time / (1200 - link.weight * 520) + link.weight) % 1;
+    const particleX = (1 - particleProgress) * (1 - particleProgress) * source.x + 2 * (1 - particleProgress) * particleProgress * mx + particleProgress * particleProgress * target.x;
+    const particleY = (1 - particleProgress) * (1 - particleProgress) * source.y + 2 * (1 - particleProgress) * particleProgress * my + particleProgress * particleProgress * target.y;
 
     ctx.save();
     ctx.beginPath();
@@ -222,6 +225,11 @@ function LiteratureGraphScreen() {
     ctx.arc(mx, my, 2.5 + pulse * 3.5 + link.weight * 2, 0, Math.PI * 2);
     ctx.fillStyle = link.weight > 0.76 ? "#1B7A8F" : "#C73E3A";
     ctx.globalAlpha = active ? 0.9 : 0.35;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(particleX, particleY, 2.5 + link.weight * 3.5, 0, Math.PI * 2);
+    ctx.globalAlpha = active ? 0.95 : 0.62;
     ctx.fill();
     ctx.restore();
   };
