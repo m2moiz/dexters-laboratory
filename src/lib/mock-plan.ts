@@ -133,6 +133,7 @@ export const samplePlan: DexterPlan = {
         "Trehalose preserves membrane structure during dehydration and freezing by replacing water at phospholipid headgroups and suppressing phase transitions.",
       x: 120,
       y: 140,
+      influence: 0.95,
     },
     {
       id: "p2",
@@ -143,6 +144,7 @@ export const samplePlan: DexterPlan = {
         "Delivery of trehalose into mammalian cells improved recovery after cryogenic storage and reduced membrane damage during thaw.",
       x: 340,
       y: 90,
+      influence: 0.88,
     },
     {
       id: "p3",
@@ -153,6 +155,7 @@ export const samplePlan: DexterPlan = {
         "A comparative review of permeating and non-permeating cryoprotectants across microbial and mammalian systems.",
       x: 560,
       y: 170,
+      influence: 0.7,
     },
     {
       id: "p4",
@@ -163,6 +166,7 @@ export const samplePlan: DexterPlan = {
         "Standardized cooling rates reduce inter-vial variation and clarify the effect size of freezing medium changes.",
       x: 240,
       y: 300,
+      influence: 0.78,
     },
     {
       id: "p5",
@@ -173,6 +177,7 @@ export const samplePlan: DexterPlan = {
         "Post-thaw attachment and ATP recovery are sensitive to osmolarity changes introduced by non-permeating solutes.",
       x: 500,
       y: 340,
+      influence: 0.82,
     },
     {
       id: "p6",
@@ -183,6 +188,7 @@ export const samplePlan: DexterPlan = {
         "Pairing dye exclusion with metabolic assays improves confidence when evaluating cryoprotectant interventions.",
       x: 720,
       y: 270,
+      influence: 0.62,
     },
     {
       id: "p7",
@@ -193,6 +199,7 @@ export const samplePlan: DexterPlan = {
         "Alternative solute systems can reduce toxicity while preserving attachment, but require careful dose matching.",
       x: 760,
       y: 90,
+      influence: 0.54,
     },
     {
       id: "p8",
@@ -203,17 +210,18 @@ export const samplePlan: DexterPlan = {
         "Replicate structure and batch randomization are central to interpreting modest viability improvements.",
       x: 100,
       y: 390,
+      influence: 0.68,
     },
   ],
   edges: [
-    { id: "e1", source: "p1", target: "p2" },
-    { id: "e2", source: "p2", target: "p3" },
-    { id: "e3", source: "p2", target: "p4" },
-    { id: "e4", source: "p4", target: "p5" },
-    { id: "e5", source: "p5", target: "p6" },
-    { id: "e6", source: "p3", target: "p7" },
-    { id: "e7", source: "p8", target: "p4" },
-    { id: "e8", source: "p1", target: "p5" },
+    { id: "e1", source: "p1", target: "p2", weight: 0.92 },
+    { id: "e2", source: "p2", target: "p3", weight: 0.7 },
+    { id: "e3", source: "p2", target: "p4", weight: 0.84 },
+    { id: "e4", source: "p4", target: "p5", weight: 0.78 },
+    { id: "e5", source: "p5", target: "p6", weight: 0.58 },
+    { id: "e6", source: "p3", target: "p7", weight: 0.42 },
+    { id: "e7", source: "p8", target: "p4", weight: 0.64 },
+    { id: "e8", source: "p1", target: "p5", weight: 0.73 },
   ],
   activity: [
     "[LAB-LOG 14:23:01] Searching protocols.io for cryopreservation...",
