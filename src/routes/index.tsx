@@ -6,8 +6,8 @@ import {
   ReactFlow,
   type Edge,
   type Node,
-  type NodeDragHandler,
   type NodeMouseHandler,
+  type OnNodeDrag,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
