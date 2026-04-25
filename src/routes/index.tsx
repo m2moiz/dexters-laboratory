@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCollide, forceLink, forceManyBody } from "d3-force";
-import type ForceGraph2D from "react-force-graph-2d";
-import type { ForceGraphMethods, GraphData, LinkObject, NodeObject } from "react-force-graph-2d";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,15 +30,30 @@ export const Route = createFileRoute("/")({
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 18 + influence * 18;
 
-type ForceNode = NodeObject<{
+type ForceNode = {
   id: string;
   paper: Paper;
   influence: number;
   shortLabel: string;
   val: number;
-}>;
+  x?: number;
+  y?: number;
+  fx?: number;
+  fy?: number;
+};
 
-type ForceLink = LinkObject<ForceNode, { id: string; weight: number }>;
+type ForceLink = { id: string; source?: string | ForceNode; target?: string | ForceNode; weight: number };
+
+type ForceGraphData = {
+  nodes: ForceNode[];
+  links: ForceLink[];
+};
+
+type ForceGraphHandle = {
+  d3Force: (name: string, force?: unknown) => unknown;
+  d3ReheatSimulation: () => unknown;
+  zoomToFit: (durationMs?: number, padding?: number) => unknown;
+};
 
 function DexterApp() {
   const currentScreen = useDexterStore((state) => state.currentScreen);
@@ -145,13 +158,13 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
-  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
+  const graphRef = useRef<ForceGraphHandle | undefined>(undefined);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
-  const [ForceGraph, setForceGraph] = useState<typeof ForceGraph2D | null>(null);
+  const [ForceGraph, setForceGraph] = useState<ComponentType<Record<string, unknown>> | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
 
-  const graphData = useMemo<GraphData<ForceNode, ForceLink>>(
+  const graphData = useMemo<ForceGraphData>(
     () => ({
       nodes: plan.papers.map((paper) => ({
         id: paper.id,
@@ -168,7 +181,7 @@ function LiteratureGraphScreen() {
   useEffect(() => {
     let mounted = true;
     import("react-force-graph-2d").then((module) => {
-      if (mounted) setForceGraph(() => module.default);
+      if (mounted) setForceGraph(() => module.default as ComponentType<Record<string, unknown>>);
     });
     return () => {
       mounted = false;
@@ -288,17 +301,17 @@ function LiteratureGraphScreen() {
       </header>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
         {ForceGraph ? (
-          <ForceGraph<ForceNode, ForceLink>
+          <ForceGraph
             ref={graphRef}
             graphData={graphData}
             width={graphSize.width}
             height={graphSize.height}
             backgroundColor="rgba(252,247,236,1)"
             nodeId="id"
-            nodeLabel={(node) => `${node.paper.title} (${node.paper.year})`}
-            nodeVal={(node) => node.val}
+            nodeLabel={(node: ForceNode) => `${node.paper.title} (${node.paper.year})`}
+            nodeVal={(node: ForceNode) => node.val}
             nodeCanvasObject={drawNode}
-            nodePointerAreaPaint={(node, color, ctx) => {
+            nodePointerAreaPaint={(node: ForceNode, color: string, ctx: CanvasRenderingContext2D) => {
               ctx.fillStyle = color;
               ctx.beginPath();
               ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
@@ -306,19 +319,19 @@ function LiteratureGraphScreen() {
             }}
             linkCanvasObject={drawLink}
             linkCanvasObjectMode={() => "replace"}
-            linkDirectionalParticles={(link) => Math.round(1 + link.weight * 3)}
-            linkDirectionalParticleSpeed={(link) => 0.003 + link.weight * 0.006}
-            linkDirectionalParticleWidth={(link) => 1.5 + link.weight * 3}
-            linkDirectionalParticleColor={(link) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
+            linkDirectionalParticles={(link: ForceLink) => Math.round(1 + link.weight * 3)}
+            linkDirectionalParticleSpeed={(link: ForceLink) => 0.003 + link.weight * 0.006}
+            linkDirectionalParticleWidth={(link: ForceLink) => 1.5 + link.weight * 3}
+            linkDirectionalParticleColor={(link: ForceLink) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
             d3VelocityDecay={0.18}
             d3AlphaDecay={0.015}
             cooldownTicks={Infinity}
             autoPauseRedraw={false}
             enableNodeDrag
-            showPointerCursor={(object) => Boolean(object)}
-            onNodeHover={(node) => setHoveredNode(node)}
-            onNodeClick={(node) => selectPaper(node.paper)}
-            onNodeDragEnd={(node) => {
+            showPointerCursor={(object: unknown) => Boolean(object)}
+            onNodeHover={(node: ForceNode | null) => setHoveredNode(node)}
+            onNodeClick={(node: ForceNode) => selectPaper(node.paper)}
+            onNodeDragEnd={(node: ForceNode) => {
               node.fx = undefined;
               node.fy = undefined;
               graphRef.current?.d3ReheatSimulation();
