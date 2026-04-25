@@ -202,8 +202,99 @@ function LiteratureGraphScreen() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
+  useEffect(() => {
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => ({
+        ...node,
+        style: {
+          ...node.style,
+          background: node.id === selectedPaper?.id ? "var(--accent)" : "var(--card)",
+          color: node.id === selectedPaper?.id ? "var(--accent-foreground)" : "var(--foreground)",
+          transform: node.id === selectedPaper?.id ? "scale(1.08)" : "scale(1)",
+        },
+      })),
+    );
+  }, [selectedPaper?.id, setNodes]);
+
+  useEffect(() => {
+    let frame = 0;
+    const anchors = Object.fromEntries(plan.papers.map((paper) => [paper.id, { x: paper.x, y: paper.y }]));
+    const strengths = Object.fromEntries(plan.edges.map((edge) => [edge.id, edge.weight]));
+
+    const tick = () => {
+      frame += 0.012;
+      setNodes((currentNodes) => {
+        const lookup = Object.fromEntries(currentNodes.map((node) => [node.id, node]));
+        return currentNodes.map((node, index) => {
+          if (node.id === draggedNodeRef.current) return node;
+
+          const velocity = velocityRef.current[node.id] ?? { vx: 0, vy: 0 };
+          const anchor = anchors[node.id];
+          let fx = anchor ? (anchor.x - node.position.x) * 0.004 : 0;
+          let fy = anchor ? (anchor.y - node.position.y) * 0.004 : 0;
+
+          plan.edges.forEach((edge) => {
+            if (edge.source !== node.id && edge.target !== node.id) return;
+            const other = lookup[edge.source === node.id ? edge.target : edge.source];
+            if (!other) return;
+            const dx = other.position.x - node.position.x;
+            const dy = other.position.y - node.position.y;
+            const distance = Math.max(Math.hypot(dx, dy), 1);
+            const targetDistance = 300 - strengths[edge.id] * 155;
+            const pull = (distance - targetDistance) * 0.0009 * strengths[edge.id];
+            fx += (dx / distance) * pull;
+            fy += (dy / distance) * pull;
+          });
+
+          currentNodes.forEach((other) => {
+            if (other.id === node.id) return;
+            const dx = node.position.x - other.position.x;
+            const dy = node.position.y - other.position.y;
+            const distance = Math.max(Math.hypot(dx, dy), 1);
+            if (distance < 170) {
+              const push = (170 - distance) * 0.00035;
+              fx += (dx / distance) * push;
+              fy += (dy / distance) * push;
+            }
+          });
+
+          fx += Math.sin(frame + index * 1.9) * 0.012;
+          fy += Math.cos(frame * 0.9 + index * 1.4) * 0.012;
+
+          const nextVelocity = {
+            vx: (velocity.vx + fx) * 0.92,
+            vy: (velocity.vy + fy) * 0.92,
+          };
+          velocityRef.current[node.id] = nextVelocity;
+
+          return {
+            ...node,
+            position: {
+              x: node.position.x + nextVelocity.vx,
+              y: node.position.y + nextVelocity.vy,
+            },
+          };
+        });
+      });
+      requestAnimationFrame(tick);
+    };
+
+    const animation = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animation);
+  }, [plan.edges, plan.papers, setNodes]);
+
   const onNodeClick: NodeMouseHandler = (_, node) => {
     selectPaper(plan.papers.find((paper) => paper.id === node.id) ?? null);
+  };
+
+  const onNodeDragStart: OnNodeDrag = (_, node) => {
+    draggedNodeRef.current = node.id;
+    velocityRef.current[node.id] = { vx: 0, vy: 0 };
+  };
+
+  const onNodeDragStop: OnNodeDrag = (_, node) => {
+    draggedNodeRef.current = null;
+    velocityRef.current[node.id] = { vx: 0, vy: 0 };
   };
 
   return (
