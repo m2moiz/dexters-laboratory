@@ -145,5 +145,28 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--font-sans);
+    letter-spacing: 0;
+  }
+}
+
+@layer utilities {
+  .border-industrial {
+    border-color: var(--industrial);
+  }
+
+  .dexter-shadow {
+    box-shadow: 4px 4px 0px var(--industrial);
+  }
+
+  .dexter-cta-shadow {
+    box-shadow: 4px 4px 0px var(--industrial);
+    transition:
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .dexter-cta-shadow:hover {
+    transform: translate(-2px, -2px);
   }
 }
