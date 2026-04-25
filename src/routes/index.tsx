@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCollide, forceLink, forceManyBody } from "d3-force";
 
@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
-const graphNodeRadius = (influence: number) => 18 + influence * 18;
+const graphNodeRadius = (influence: number) => 16 + influence * 15;
 
 type ForceNode = {
   id: string;
@@ -163,6 +163,9 @@ function LiteratureGraphScreen() {
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const [ForceGraph, setForceGraph] = useState<ComponentType<Record<string, unknown>> | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
+  const fitGraphToView = useCallback(() => {
+    graphRef.current?.zoomToFit(650, Math.max(70, Math.min(graphSize.width, graphSize.height) * 0.12));
+  }, [graphSize.height, graphSize.width]);
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
@@ -206,17 +209,18 @@ function LiteratureGraphScreen() {
       "link",
       forceLink<ForceNode, ForceLink & { source: string | ForceNode; target: string | ForceNode }>()
         .id((node) => String(node.id))
-        .distance((link) => 340 - link.weight * 185)
-        .strength((link) => 0.08 + link.weight * 0.34),
+        .distance((link) => 220 - link.weight * 95)
+        .strength((link) => 0.06 + link.weight * 0.24),
     );
-    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -620 - node.influence * 420));
+    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -430 - node.influence * 280));
     graph.d3Force(
       "collide",
       forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 34).strength(1),
     );
     graph.d3ReheatSimulation();
-    window.setTimeout(() => graph.zoomToFit(900, 90), 450);
-  }, [ForceGraph, graphData]);
+    window.setTimeout(fitGraphToView, 250);
+    window.setTimeout(fitGraphToView, 950);
+  }, [ForceGraph, fitGraphToView, graphData]);
 
   const selectedId = selectedPaper?.id;
 
@@ -311,10 +315,11 @@ function LiteratureGraphScreen() {
             nodeLabel={(node: ForceNode) => `${node.paper.title} (${node.paper.year})`}
             nodeVal={(node: ForceNode) => node.val}
             nodeCanvasObject={drawNode}
+            nodeCanvasObjectMode={() => "replace"}
             nodePointerAreaPaint={(node: ForceNode, color: string, ctx: CanvasRenderingContext2D) => {
               ctx.fillStyle = color;
               ctx.beginPath();
-              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
+              ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 24, 0, Math.PI * 2);
               ctx.fill();
             }}
             linkCanvasObject={drawLink}
@@ -328,13 +333,16 @@ function LiteratureGraphScreen() {
             cooldownTicks={Infinity}
             autoPauseRedraw={false}
             enableNodeDrag
+            enablePointerInteraction
             showPointerCursor={(object: unknown) => Boolean(object)}
             onNodeHover={(node: ForceNode | null) => setHoveredNode(node)}
             onNodeClick={(node: ForceNode) => selectPaper(node.paper)}
+            onEngineStop={fitGraphToView}
             onNodeDragEnd={(node: ForceNode) => {
               node.fx = undefined;
               node.fy = undefined;
               graphRef.current?.d3ReheatSimulation();
+              window.setTimeout(fitGraphToView, 400);
             }}
             onBackgroundClick={() => selectPaper(null)}
           />
