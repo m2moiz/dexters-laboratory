@@ -29,6 +29,7 @@ export const Route = createFileRoute("/")({
 
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 16 + influence * 15;
+const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
 
 type ForceNode = {
   id: string;
@@ -36,6 +37,7 @@ type ForceNode = {
   influence: number;
   shortLabel: string;
   val: number;
+  phase: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -175,6 +177,7 @@ function LiteratureGraphScreen() {
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
+        phase: indexFromPaperId(paper.id) * 1.37,
         x: paper.x,
         y: paper.y,
       })),
@@ -204,7 +207,10 @@ function LiteratureGraphScreen() {
     const mx = (source.x + target.x) / 2 - dy * curve;
     const my = (source.y + target.y) / 2 + dx * curve;
     const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedPaperId === source.id || selectedPaperId === target.id;
-    const pulse = (Math.sin(time / 420 + link.weight * 9) + 1) / 2;
+    const pulse = (Math.sin(time / 240 + link.weight * 9) + 1) / 2;
+    const particleProgress = (time / (1200 - link.weight * 520) + link.weight) % 1;
+    const particleX = (1 - particleProgress) * (1 - particleProgress) * source.x + 2 * (1 - particleProgress) * particleProgress * mx + particleProgress * particleProgress * target.x;
+    const particleY = (1 - particleProgress) * (1 - particleProgress) * source.y + 2 * (1 - particleProgress) * particleProgress * my + particleProgress * particleProgress * target.y;
 
     ctx.save();
     ctx.beginPath();
@@ -220,6 +226,11 @@ function LiteratureGraphScreen() {
     ctx.fillStyle = link.weight > 0.76 ? "#1B7A8F" : "#C73E3A";
     ctx.globalAlpha = active ? 0.9 : 0.35;
     ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(particleX, particleY, 2.5 + link.weight * 3.5, 0, Math.PI * 2);
+    ctx.globalAlpha = active ? 0.95 : 0.62;
+    ctx.fill();
     ctx.restore();
   };
 
@@ -228,10 +239,16 @@ function LiteratureGraphScreen() {
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
+    const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
     const x = node.x ?? 0;
     const y = node.y ?? 0;
 
     ctx.save();
+    ctx.beginPath();
+    ctx.arc(x, y, radius + 8 + breath * 8, 0, Math.PI * 2);
+    ctx.fillStyle = hovered || selected ? "rgba(199, 62, 58, 0.14)" : "rgba(27, 122, 143, 0.1)";
+    ctx.fill();
+
     ctx.beginPath();
     ctx.arc(x + 5, y + 5, radius, 0, Math.PI * 2);
     ctx.fillStyle = "#1A1A1A";
@@ -275,9 +292,10 @@ function LiteratureGraphScreen() {
       .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(1))
       .force("center", forceCenter(0, 0))
-      .alpha(0.95)
-      .alphaDecay(0.002)
-      .velocityDecay(0.18);
+      .alpha(1)
+      .alphaDecay(0.0007)
+      .alphaMin(0.08)
+      .velocityDecay(0.09);
 
     simulationRef.current = simulation;
     return () => {
@@ -302,12 +320,26 @@ function LiteratureGraphScreen() {
       const nodes = nodesRef.current;
       nodes.forEach((node, index) => {
         if (node !== dragRef.current) {
-          const orbit = Math.atan2(node.y ?? 0, node.x ?? 0) + Math.PI / 2;
-          node.vx = (node.vx ?? 0) + Math.cos(orbit) * 0.014 + Math.sin(time / 700 + index * 1.9) * 0.018;
-          node.vy = (node.vy ?? 0) + Math.sin(orbit) * 0.014 + Math.cos(time / 760 + index * 1.4) * 0.018;
+          const x = node.x ?? 0;
+          const y = node.y ?? 0;
+          const distance = Math.max(Math.hypot(x, y), 1);
+          const orbit = Math.atan2(y, x) + Math.PI / 2;
+          const orbitalForce = 0.052 + node.influence * 0.028;
+          const waveForce = 0.065;
+          const centerPull = Math.min(distance, 420) * 0.00016;
+          node.vx =
+            (node.vx ?? 0) +
+            Math.cos(orbit) * orbitalForce +
+            Math.sin(time / 360 + node.phase + index * 1.7) * waveForce -
+            (x / distance) * centerPull;
+          node.vy =
+            (node.vy ?? 0) +
+            Math.sin(orbit) * orbitalForce +
+            Math.cos(time / 410 + node.phase + index * 1.2) * waveForce -
+            (y / distance) * centerPull;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.24)).tick(2);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 90;
