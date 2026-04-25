@@ -161,6 +161,8 @@ function LiteratureGraphScreen() {
   const nodesRef = useRef<ForceNode[]>([]);
   const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
+  const [hoverCardPosition, setHoverCardPosition] = useState({ x: 0, y: 0 });
+  const [visitedNodeIds, setVisitedNodeIds] = useState<Set<string>>(() => new Set());
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
   const selectedPaperId = selectedPaper?.id;
@@ -225,6 +227,7 @@ function LiteratureGraphScreen() {
     const radius = graphNodeRadius(node.influence);
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
+    const visited = visitedNodeIds.has(node.id);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
 
@@ -236,8 +239,9 @@ function LiteratureGraphScreen() {
 
     ctx.beginPath();
     ctx.arc(x, y, radius + (hovered ? 5 : 0), 0, Math.PI * 2);
-    ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : "#FFFDF6";
+    ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : visited ? "#B9B4AA" : "#FFFDF6";
     ctx.fill();
+    ctx.globalAlpha = visited && !selected && !hovered ? 0.74 : 1;
     ctx.lineWidth = selected || hovered ? 4 : 3;
     ctx.strokeStyle = "#1A1A1A";
     ctx.stroke();
