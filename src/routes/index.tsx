@@ -36,6 +36,16 @@ export const Route = createFileRoute("/")({
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 18 + influence * 18;
 
+type ForceNode = NodeObject<{
+  id: string;
+  paper: Paper;
+  influence: number;
+  shortLabel: string;
+  val: number;
+}>;
+
+type ForceLink = LinkObject<ForceNode, { id: string; weight: number }>;
+
 function DexterApp() {
   const currentScreen = useDexterStore((state) => state.currentScreen);
 
