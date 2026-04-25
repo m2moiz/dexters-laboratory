@@ -160,6 +160,7 @@ function LiteratureGraphScreen() {
   const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
   const dragRef = useRef<ForceNode | null>(null);
+  const pointerDownRef = useRef<{ node: ForceNode; x: number; y: number; didDrag: boolean } | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
   const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
@@ -290,12 +291,12 @@ function LiteratureGraphScreen() {
           .strength((link) => 0.06 + link.weight * 0.22),
       )
       .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
-      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(1))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(0.82))
       .force("center", forceCenter(0, 0))
       .alpha(1)
-      .alphaDecay(0.0007)
+      .alphaDecay(0.0016)
       .alphaMin(0.08)
-      .velocityDecay(0.09);
+      .velocityDecay(0.18);
 
     simulationRef.current = simulation;
     return () => {
