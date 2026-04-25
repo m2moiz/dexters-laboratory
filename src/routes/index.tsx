@@ -7,6 +7,9 @@ import {
   type Edge,
   type Node,
   type NodeMouseHandler,
+  type OnNodeDrag,
+  useEdgesState,
+  useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -36,6 +39,7 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
+const nodeSize = (influence: number) => 78 + influence * 70;
 
 function DexterApp() {
   const currentScreen = useDexterStore((state) => state.currentScreen);
@@ -140,23 +144,26 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
+  const draggedNodeRef = useRef<string | null>(null);
+  const velocityRef = useRef<Record<string, { vx: number; vy: number }>>({});
 
-  const nodes = useMemo<Node[]>(
+  const initialNodes = useMemo<Node[]>(
     () =>
       plan.papers.map((paper) => ({
         id: paper.id,
         position: { x: paper.x, y: paper.y },
         data: { label: paper.title },
+        className: "dexter-graph-node",
         style: {
-          width: 112,
-          height: 112,
+          width: nodeSize(paper.influence),
+          height: nodeSize(paper.influence),
           borderRadius: 999,
           border: "3px solid var(--industrial)",
-          background: paper.id === selectedPaper?.id ? "var(--accent)" : "var(--card)",
-          color: paper.id === selectedPaper?.id ? "var(--accent-foreground)" : "var(--foreground)",
-          boxShadow: "4px 4px 0px var(--industrial)",
+          background: "var(--card)",
+          color: "var(--foreground)",
+          boxShadow: `${3 + Math.round(paper.influence * 4)}px ${3 + Math.round(paper.influence * 4)}px 0px var(--industrial)`,
           fontFamily: "var(--font-mono)",
-          fontSize: 10,
+          fontSize: 9 + paper.influence * 3,
           fontWeight: 800,
           textTransform: "uppercase",
           display: "flex",
@@ -165,21 +172,134 @@ function LiteratureGraphScreen() {
           padding: 12,
         },
       })),
-    [plan.papers, selectedPaper?.id],
+    [plan.papers],
   );
 
-  const edges = useMemo<Edge[]>(
+  const initialEdges = useMemo<Edge[]>(
     () =>
       plan.edges.map((edge) => ({
         ...edge,
-        type: "straight",
-        style: { stroke: "var(--industrial)", strokeWidth: 3 },
+        type: "smoothstep",
+        animated: true,
+        label: `${Math.round(edge.weight * 100)}%`,
+        labelStyle: {
+          fill: "var(--foreground)",
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 800,
+        },
+        labelBgStyle: { fill: "var(--background)", fillOpacity: 0.92 },
+        style: {
+          stroke: edge.weight > 0.75 ? "var(--primary)" : "var(--industrial)",
+          strokeWidth: 1.5 + edge.weight * 4,
+          opacity: 0.38 + edge.weight * 0.55,
+          strokeDasharray: edge.weight > 0.75 ? "0" : "8 8",
+        },
       })),
     [plan.edges],
   );
 
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
+
+  useEffect(() => {
+    setNodes((currentNodes) =>
+      currentNodes.map((node) => ({
+        ...node,
+        style: {
+          ...node.style,
+          background: node.id === selectedPaper?.id ? "var(--accent)" : "var(--card)",
+          color: node.id === selectedPaper?.id ? "var(--accent-foreground)" : "var(--foreground)",
+          transform: node.id === selectedPaper?.id ? "scale(1.08)" : "scale(1)",
+        },
+      })),
+    );
+  }, [selectedPaper?.id, setNodes]);
+
+  useEffect(() => {
+    let frame = 0;
+    let active = true;
+    const anchors = Object.fromEntries(plan.papers.map((paper) => [paper.id, { x: paper.x, y: paper.y }]));
+    const strengths = Object.fromEntries(plan.edges.map((edge) => [edge.id, edge.weight]));
+
+    const tick = () => {
+      if (!active) return;
+      frame += 0.012;
+      setNodes((currentNodes) => {
+        const lookup = Object.fromEntries(currentNodes.map((node) => [node.id, node]));
+        return currentNodes.map((node, index) => {
+          if (node.id === draggedNodeRef.current) return node;
+
+          const velocity = velocityRef.current[node.id] ?? { vx: 0, vy: 0 };
+          const anchor = anchors[node.id];
+          let fx = anchor ? (anchor.x - node.position.x) * 0.004 : 0;
+          let fy = anchor ? (anchor.y - node.position.y) * 0.004 : 0;
+
+          plan.edges.forEach((edge) => {
+            if (edge.source !== node.id && edge.target !== node.id) return;
+            const other = lookup[edge.source === node.id ? edge.target : edge.source];
+            if (!other) return;
+            const dx = other.position.x - node.position.x;
+            const dy = other.position.y - node.position.y;
+            const distance = Math.max(Math.hypot(dx, dy), 1);
+            const targetDistance = 300 - strengths[edge.id] * 155;
+            const pull = (distance - targetDistance) * 0.0009 * strengths[edge.id];
+            fx += (dx / distance) * pull;
+            fy += (dy / distance) * pull;
+          });
+
+          currentNodes.forEach((other) => {
+            if (other.id === node.id) return;
+            const dx = node.position.x - other.position.x;
+            const dy = node.position.y - other.position.y;
+            const distance = Math.max(Math.hypot(dx, dy), 1);
+            if (distance < 170) {
+              const push = (170 - distance) * 0.00035;
+              fx += (dx / distance) * push;
+              fy += (dy / distance) * push;
+            }
+          });
+
+          fx += Math.sin(frame + index * 1.9) * 0.012;
+          fy += Math.cos(frame * 0.9 + index * 1.4) * 0.012;
+
+          const nextVelocity = {
+            vx: (velocity.vx + fx) * 0.92,
+            vy: (velocity.vy + fy) * 0.92,
+          };
+          velocityRef.current[node.id] = nextVelocity;
+
+          return {
+            ...node,
+            position: {
+              x: node.position.x + nextVelocity.vx,
+              y: node.position.y + nextVelocity.vy,
+            },
+          };
+        });
+      });
+      requestAnimationFrame(tick);
+    };
+
+    const animation = requestAnimationFrame(tick);
+    return () => {
+      active = false;
+      cancelAnimationFrame(animation);
+    };
+  }, [plan.edges, plan.papers, setNodes]);
+
   const onNodeClick: NodeMouseHandler = (_, node) => {
     selectPaper(plan.papers.find((paper) => paper.id === node.id) ?? null);
+  };
+
+  const onNodeDragStart: OnNodeDrag = (_, node) => {
+    draggedNodeRef.current = node.id;
+    velocityRef.current[node.id] = { vx: 0, vy: 0 };
+  };
+
+  const onNodeDragStop: OnNodeDrag = (_, node) => {
+    draggedNodeRef.current = null;
+    velocityRef.current[node.id] = { vx: 0, vy: 0 };
   };
 
   return (
@@ -197,7 +317,20 @@ function LiteratureGraphScreen() {
         </Button>
       </header>
       <section className="relative h-[calc(100vh-60px)] overflow-hidden">
-        <ReactFlow nodes={nodes} edges={edges} onNodeClick={onNodeClick} fitView nodesDraggable={false}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
+          onNodeDragStart={onNodeDragStart}
+          onNodeDragStop={onNodeDragStop}
+          fitView
+          nodesDraggable
+          minZoom={0.55}
+          maxZoom={1.4}
+          className="dexter-flow"
+        >
           <Background color="var(--industrial)" gap={28} size={1} />
           <Controls className="border-2 border-industrial bg-card" />
         </ReactFlow>

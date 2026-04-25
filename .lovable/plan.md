@@ -1,64 +1,40 @@
-Build Dexter as a polished single-page React + TypeScript + Tailwind app matching the requested retro-modernist design and five-screen flow.
+Plan to improve the Dexter literature graph
 
-Implementation plan:
+1. Make the graph feel alive
+- Replace the current static node positions with an animated force-style layout.
+- Nodes will gently drift/pulse around their starting positions so the graph feels active and computational.
+- Add motion that pauses/settles when a user drags a node, then resumes subtly afterward.
 
-1. Replace the placeholder homepage with Dexter
-- Use the existing TanStack Start app structure rather than creating a separate Next.js project, while keeping the requested React + TypeScript + Tailwind implementation style.
-- Keep all five screens inside the `/` route and switch between them using application state instead of separate routes.
-- Update page metadata to reflect Dexter.
+2. Add weighted relationships
+- Extend the mock graph edge data with `weight` values.
+- Use edge weight to control visual and spatial meaning:
+  - stronger relationships: shorter apparent distance, thicker/darker edge
+  - weaker relationships: longer apparent distance, thinner/lighter edge
+- Show edge labels or subtle metadata only where it improves clarity, without cluttering the graph.
 
-2. Add app state and mock data
-- Install Zustand.
-- Create a single Dexter store with:
-  - `currentScreen`
-  - `hypothesis`
-  - `plan`
-  - `currentlySelectedPaper`
-  - actions for advancing screens, setting hypothesis, selecting papers, and resetting where needed.
-- Create `src/lib/mock-plan.ts` exporting a fully populated sample plan object with Summary, Novelty, Protocol, Materials, Budget, Timeline, Validation, citations, comments, papers, graph nodes, and metrics.
+3. Add node size variation
+- Extend paper nodes with an `influence` or `relevance` score.
+- Map that score to node diameter, so highly relevant/influential papers appear larger.
+- Keep selected nodes visually distinct using Dexter’s red accent while preserving the black-border industrial style.
 
-3. Implement the design system
-- Load Google Fonts: Fraunces, Inter, and JetBrains Mono.
-- Update global CSS variables for:
-  - warm cream background `#FCF7EC`
-  - deep teal primary `#1B7A8F`
-  - red CTA accent `#C73E3A`
-  - black border `#1A1A1A`
-- Add reusable utility classes/patterns for hard black borders and offset shadows.
-- Keep shadcn/ui components where appropriate, especially buttons, cards, textarea, badges/chips, scroll areas, and panels.
+4. Enable interaction
+- Turn node dragging back on so users can move papers with the mouse.
+- Keep node click behavior for opening the right-side paper panel.
+- Ensure dragging does not accidentally make the detail panel feel broken or overly sensitive.
 
-4. Build the five screens
-- Loading screen:
-  - Centered cream layout.
-  - “DEXTER” letter-by-letter reveal in Fraunces.
-  - Tagline below.
-  - Auto-advance after 2 seconds.
-- Hypothesis input screen:
-  - Centered headline and wide textarea.
-  - Helper copy and three uppercase monospace example chips.
-  - Chip clicks autofill the textarea.
-  - Large red CTA advances to the literature graph.
-- Literature graph screen:
-  - 60px top bar with hypothesis preview and Continue to Plan button.
-  - React Flow graph using mock paper nodes and connecting lines.
-  - Right-side details panel slides in when a node is clicked.
-- Plan generating screen:
-  - Two-column layout.
-  - Plan skeleton sections progressively fill with mock content.
-  - Monospace activity feed adds lines every 1.5 seconds.
-  - Auto-advance to final plan view after 12 seconds.
-- Plan view screen:
-  - Sticky 80px top banner with hypothesis and three large metrics.
-  - Three-column layout: table of contents, plan cards, citations/comments.
-  - Highlight table-of-contents section based on scroll position.
-  - Bottom red “I’M HAPPY WITH THIS” CTA.
+5. Improve visual polish
+- Use curved/smooth edges instead of plain straight lines.
+- Add animated edge strokes or subtle moving dash patterns for a research-network feel.
+- Style the React Flow canvas to match the Dexter system: cream background, black grid, hard node shadows, teal/red accents.
 
-5. Add React Flow dependency and integrate safely
-- Install React Flow.
-- Use static mock nodes/edges and custom styling to match the Dexter visual language.
-- Avoid external data calls; all content remains mock data.
-
-6. Validate the build
-- Ensure no placeholder blank app content remains.
-- Run formatting/type/build checks after implementation.
-- Fix any route, import, or TypeScript issues before finishing.
+Technical details
+- Update `src/lib/mock-plan.ts` types and mock data:
+  - add `weight` to edges
+  - add `influence` or `relevance` to papers
+- Update `src/routes/index.tsx` graph rendering:
+  - use React Flow controlled `nodes`/`edges` state
+  - enable `nodesDraggable`
+  - add an animation loop with `requestAnimationFrame`
+  - vary node size and edge styling based on mock weights/scores
+- Add graph-specific CSS utilities/keyframes in `src/styles.css` for subtle node/edge animation and React Flow overrides.
+- Verify the app still builds successfully after the change.
