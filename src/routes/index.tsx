@@ -301,17 +301,17 @@ function LiteratureGraphScreen() {
       </header>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
         {ForceGraph ? (
-          <ForceGraph<ForceNode, ForceLink>
+          <ForceGraph
             ref={graphRef}
             graphData={graphData}
             width={graphSize.width}
             height={graphSize.height}
             backgroundColor="rgba(252,247,236,1)"
             nodeId="id"
-            nodeLabel={(node) => `${node.paper.title} (${node.paper.year})`}
-            nodeVal={(node) => node.val}
+            nodeLabel={(node: ForceNode) => `${node.paper.title} (${node.paper.year})`}
+            nodeVal={(node: ForceNode) => node.val}
             nodeCanvasObject={drawNode}
-            nodePointerAreaPaint={(node, color, ctx) => {
+            nodePointerAreaPaint={(node: ForceNode, color: string, ctx: CanvasRenderingContext2D) => {
               ctx.fillStyle = color;
               ctx.beginPath();
               ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
@@ -319,19 +319,19 @@ function LiteratureGraphScreen() {
             }}
             linkCanvasObject={drawLink}
             linkCanvasObjectMode={() => "replace"}
-            linkDirectionalParticles={(link) => Math.round(1 + link.weight * 3)}
-            linkDirectionalParticleSpeed={(link) => 0.003 + link.weight * 0.006}
-            linkDirectionalParticleWidth={(link) => 1.5 + link.weight * 3}
-            linkDirectionalParticleColor={(link) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
+            linkDirectionalParticles={(link: ForceLink) => Math.round(1 + link.weight * 3)}
+            linkDirectionalParticleSpeed={(link: ForceLink) => 0.003 + link.weight * 0.006}
+            linkDirectionalParticleWidth={(link: ForceLink) => 1.5 + link.weight * 3}
+            linkDirectionalParticleColor={(link: ForceLink) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
             d3VelocityDecay={0.18}
             d3AlphaDecay={0.015}
             cooldownTicks={Infinity}
             autoPauseRedraw={false}
             enableNodeDrag
-            showPointerCursor={(object) => Boolean(object)}
-            onNodeHover={(node) => setHoveredNode(node)}
-            onNodeClick={(node) => selectPaper(node.paper)}
-            onNodeDragEnd={(node) => {
+            showPointerCursor={(object: unknown) => Boolean(object)}
+            onNodeHover={(node: ForceNode | null) => setHoveredNode(node)}
+            onNodeClick={(node: ForceNode) => selectPaper(node.paper)}
+            onNodeDragEnd={(node: ForceNode) => {
               node.fx = undefined;
               node.fy = undefined;
               graphRef.current?.d3ReheatSimulation();
