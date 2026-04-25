@@ -163,7 +163,7 @@ function LiteratureGraphScreen() {
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
-  const selectedId = selectedPaper?.id;
+  const selectedPaperId = selectedPaper?.id;
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
@@ -201,7 +201,7 @@ function LiteratureGraphScreen() {
     const curve = 0.18 + (1 - link.weight) * 0.24;
     const mx = (source.x + target.x) / 2 - dy * curve;
     const my = (source.y + target.y) / 2 + dx * curve;
-    const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedId === source.id || selectedId === target.id;
+    const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedPaperId === source.id || selectedPaperId === target.id;
     const pulse = (Math.sin(time / 420 + link.weight * 9) + 1) / 2;
 
     ctx.save();
@@ -223,7 +223,7 @@ function LiteratureGraphScreen() {
 
   const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D) => {
     const radius = graphNodeRadius(node.influence);
-    const selected = node.id === selectedId;
+    const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const x = node.x ?? 0;
     const y = node.y ?? 0;
