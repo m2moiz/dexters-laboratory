@@ -158,13 +158,13 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
-  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink> | undefined>(undefined);
+  const graphRef = useRef<ForceGraphHandle | undefined>(undefined);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
-  const [ForceGraph, setForceGraph] = useState<typeof ForceGraph2D | null>(null);
+  const [ForceGraph, setForceGraph] = useState<ComponentType<Record<string, unknown>> | null>(null);
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
 
-  const graphData = useMemo<GraphData<ForceNode, ForceLink>>(
+  const graphData = useMemo<ForceGraphData>(
     () => ({
       nodes: plan.papers.map((paper) => ({
         id: paper.id,
@@ -181,7 +181,7 @@ function LiteratureGraphScreen() {
   useEffect(() => {
     let mounted = true;
     import("react-force-graph-2d").then((module) => {
-      if (mounted) setForceGraph(() => module.default);
+      if (mounted) setForceGraph(() => module.default as ComponentType<Record<string, unknown>>);
     });
     return () => {
       mounted = false;
