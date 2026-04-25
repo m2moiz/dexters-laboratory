@@ -1,8 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCollide, forceLink, forceManyBody } from "d3-force";
-import type ForceGraph2D from "react-force-graph-2d";
-import type { ForceGraphMethods, GraphData, LinkObject, NodeObject } from "react-force-graph-2d";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -32,15 +30,30 @@ export const Route = createFileRoute("/")({
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 18 + influence * 18;
 
-type ForceNode = NodeObject<{
+type ForceNode = {
   id: string;
   paper: Paper;
   influence: number;
   shortLabel: string;
   val: number;
-}>;
+  x?: number;
+  y?: number;
+  fx?: number;
+  fy?: number;
+};
 
-type ForceLink = LinkObject<ForceNode, { id: string; weight: number }>;
+type ForceLink = { id: string; source?: string | ForceNode; target?: string | ForceNode; weight: number };
+
+type ForceGraphData = {
+  nodes: ForceNode[];
+  links: ForceLink[];
+};
+
+type ForceGraphHandle = {
+  d3Force: (name: string, force?: unknown) => unknown;
+  d3ReheatSimulation: () => unknown;
+  zoomToFit: (durationMs?: number, padding?: number) => unknown;
+};
 
 function DexterApp() {
   const currentScreen = useDexterStore((state) => state.currentScreen);
