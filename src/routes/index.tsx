@@ -292,9 +292,10 @@ function LiteratureGraphScreen() {
       .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(1))
       .force("center", forceCenter(0, 0))
-      .alpha(0.95)
-      .alphaDecay(0.002)
-      .velocityDecay(0.18);
+      .alpha(1)
+      .alphaDecay(0.0007)
+      .alphaMin(0.08)
+      .velocityDecay(0.09);
 
     simulationRef.current = simulation;
     return () => {
@@ -319,12 +320,26 @@ function LiteratureGraphScreen() {
       const nodes = nodesRef.current;
       nodes.forEach((node, index) => {
         if (node !== dragRef.current) {
-          const orbit = Math.atan2(node.y ?? 0, node.x ?? 0) + Math.PI / 2;
-          node.vx = (node.vx ?? 0) + Math.cos(orbit) * 0.014 + Math.sin(time / 700 + index * 1.9) * 0.018;
-          node.vy = (node.vy ?? 0) + Math.sin(orbit) * 0.014 + Math.cos(time / 760 + index * 1.4) * 0.018;
+          const x = node.x ?? 0;
+          const y = node.y ?? 0;
+          const distance = Math.max(Math.hypot(x, y), 1);
+          const orbit = Math.atan2(y, x) + Math.PI / 2;
+          const orbitalForce = 0.052 + node.influence * 0.028;
+          const waveForce = 0.065;
+          const centerPull = Math.min(distance, 420) * 0.00016;
+          node.vx =
+            (node.vx ?? 0) +
+            Math.cos(orbit) * orbitalForce +
+            Math.sin(time / 360 + node.phase + index * 1.7) * waveForce -
+            (x / distance) * centerPull;
+          node.vy =
+            (node.vy ?? 0) +
+            Math.sin(orbit) * orbitalForce +
+            Math.cos(time / 410 + node.phase + index * 1.2) * waveForce -
+            (y / distance) * centerPull;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.24)).tick(2);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 90;
