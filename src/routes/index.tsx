@@ -431,32 +431,54 @@ function LiteratureGraphScreen() {
   );
 }
 
-function PaperPanel({ paper, onClose }: { paper: Paper | null; onClose: () => void }) {
+function PaperHoverCard({ node, position }: { node: ForceNode | null; position: { x: number; y: number } }) {
+  if (!node) return null;
   return (
-    <aside
+    <div
+      className="pointer-events-none fixed z-30 w-[320px] border-2 border-industrial bg-card p-4 dexter-shadow transition-opacity duration-150"
+      style={{ left: Math.min(position.x + 18, window.innerWidth - 340), top: Math.min(position.y + 18, window.innerHeight - 220) }}
+    >
+      <p className="font-mono text-[10px] font-bold uppercase text-primary">Paper Node / {node.paper.id}</p>
+      <h2 className="mt-2 line-clamp-2 font-display text-xl font-semibold leading-tight">{node.paper.title}</h2>
+      <p className="mt-3 font-mono text-[10px] font-bold uppercase text-muted-foreground">
+        {node.paper.authors} / {node.paper.year}
+      </p>
+      <p className="mt-3 line-clamp-3 text-sm leading-5 text-muted-foreground">{node.paper.abstract}</p>
+    </div>
+  );
+}
+
+function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: () => void }) {
+  return (
+    <div
       className={cn(
-        "absolute right-0 top-0 h-full w-full max-w-[30%] min-w-[360px] border-l-2 border-industrial bg-card p-7 transition-transform duration-300",
-        paper ? "translate-x-0" : "translate-x-full",
+        "pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/35 p-5 opacity-0 backdrop-blur-[2px] transition-opacity duration-200",
+        paper && "pointer-events-auto opacity-100",
       )}
     >
       {paper && (
-        <div>
+        <article className="relative w-full max-w-2xl border-2 border-industrial bg-card p-7 dexter-shadow animate-in fade-in zoom-in-95 duration-200">
           <button
             type="button"
             onClick={onClose}
-            className="mb-8 border-2 border-industrial px-3 py-1 font-mono text-xs font-bold uppercase"
+            className="absolute right-5 top-5 border-2 border-industrial bg-background px-3 py-1 font-mono text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
           >
             Close
           </button>
           <p className="font-mono text-xs font-bold uppercase text-primary">Paper Node / {paper.id}</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold leading-tight">{paper.title}</h2>
+          <h2 className="mt-4 pr-20 font-display text-4xl font-semibold leading-tight">{paper.title}</h2>
           <p className="mt-5 font-mono text-xs font-bold uppercase">
             {paper.authors} / {paper.year}
           </p>
           <p className="mt-6 text-base leading-7 text-muted-foreground">{paper.abstract}</p>
-        </div>
+          <div className="mt-7 grid grid-cols-3 gap-3 font-mono text-xs font-bold uppercase">
+            <div className="border-2 border-industrial bg-secondary p-3">Influence<br />{Math.round(paper.influence * 100)}%</div>
+            <div className="border-2 border-industrial bg-secondary p-3">Status<br />Reviewed</div>
+            <div className="border-2 border-industrial bg-secondary p-3">Action<br />Pinned</div>
+          </div>
+        </article>
       )}
-    </aside>
+    </div>
   );
 }
 
