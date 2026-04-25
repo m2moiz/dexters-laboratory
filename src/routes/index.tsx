@@ -149,162 +149,120 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
-  const draggedNodeRef = useRef<string | null>(null);
-  const velocityRef = useRef<Record<string, { vx: number; vy: number }>>({});
+  const graphRef = useRef<ForceGraphMethods<ForceNode, ForceLink>>();
+  const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
+  const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
+  const graphWrapRef = useRef<HTMLDivElement | null>(null);
 
-  const initialNodes = useMemo<Node[]>(
-    () =>
-      plan.papers.map((paper) => ({
+  const graphData = useMemo<GraphData<ForceNode, ForceLink>>(
+    () => ({
+      nodes: plan.papers.map((paper) => ({
         id: paper.id,
-        position: { x: paper.x, y: paper.y },
-        data: { label: paper.title },
-        className: "dexter-graph-node",
-        style: {
-          width: nodeSize(paper.influence),
-          height: nodeSize(paper.influence),
-          borderRadius: 999,
-          border: "3px solid var(--industrial)",
-          background: "var(--card)",
-          color: "var(--foreground)",
-          boxShadow: `${3 + Math.round(paper.influence * 4)}px ${3 + Math.round(paper.influence * 4)}px 0px var(--industrial)`,
-          fontFamily: "var(--font-mono)",
-          fontSize: 9 + paper.influence * 3,
-          fontWeight: 800,
-          textTransform: "uppercase",
-          display: "flex",
-          alignItems: "center",
-          textAlign: "center",
-          padding: 12,
-        },
+        paper,
+        influence: paper.influence,
+        shortLabel: paper.id.toUpperCase(),
+        val: graphNodeRadius(paper.influence),
       })),
-    [plan.papers],
+      links: plan.edges.map((edge) => ({ ...edge })),
+    }),
+    [plan.edges, plan.papers],
   );
-
-  const initialEdges = useMemo<Edge[]>(
-    () =>
-      plan.edges.map((edge) => ({
-        ...edge,
-        type: "smoothstep",
-        animated: true,
-        label: `${Math.round(edge.weight * 100)}%`,
-        labelStyle: {
-          fill: "var(--foreground)",
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          fontWeight: 800,
-        },
-        labelBgStyle: { fill: "var(--background)", fillOpacity: 0.92 },
-        style: {
-          stroke: edge.weight > 0.75 ? "var(--primary)" : "var(--industrial)",
-          strokeWidth: 1.5 + edge.weight * 4,
-          opacity: 0.38 + edge.weight * 0.55,
-          strokeDasharray: edge.weight > 0.75 ? "0" : "8 8",
-        },
-      })),
-    [plan.edges],
-  );
-
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
   useEffect(() => {
-    setNodes((currentNodes) =>
-      currentNodes.map((node) => ({
-        ...node,
-        style: {
-          ...node.style,
-          background: node.id === selectedPaper?.id ? "var(--accent)" : "var(--card)",
-          color: node.id === selectedPaper?.id ? "var(--accent-foreground)" : "var(--foreground)",
-          transform: node.id === selectedPaper?.id ? "scale(1.08)" : "scale(1)",
-        },
-      })),
+    const updateSize = () => {
+      const bounds = graphWrapRef.current?.getBoundingClientRect();
+      if (bounds) setGraphSize({ width: bounds.width, height: bounds.height });
+    };
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
+
+  useEffect(() => {
+    const graph = graphRef.current;
+    if (!graph) return;
+
+    graph.d3Force(
+      "link",
+      forceLink<ForceNode, ForceLink>()
+        .id((node) => String(node.id))
+        .distance((link) => 340 - link.weight * 185)
+        .strength((link) => 0.08 + link.weight * 0.34),
     );
-  }, [selectedPaper?.id, setNodes]);
+    graph.d3Force("charge", forceManyBody<ForceNode>().strength((node) => -620 - node.influence * 420));
+    graph.d3Force(
+      "collide",
+      forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 34).strength(1),
+    );
+    graph.d3ReheatSimulation();
+    window.setTimeout(() => graph.zoomToFit(900, 90), 450);
+  }, [graphData]);
 
-  useEffect(() => {
-    let frame = 0;
-    let active = true;
-    const anchors = Object.fromEntries(plan.papers.map((paper) => [paper.id, { x: paper.x, y: paper.y }]));
-    const strengths = Object.fromEntries(plan.edges.map((edge) => [edge.id, edge.weight]));
+  const selectedId = selectedPaper?.id;
 
-    const tick = () => {
-      if (!active) return;
-      frame += 0.012;
-      setNodes((currentNodes) => {
-        const lookup = Object.fromEntries(currentNodes.map((node) => [node.id, node]));
-        return currentNodes.map((node, index) => {
-          if (node.id === draggedNodeRef.current) return node;
+  const drawLink = (link: ForceLink, ctx: CanvasRenderingContext2D) => {
+    const source = link.source as ForceNode;
+    const target = link.target as ForceNode;
+    if (typeof source.x !== "number" || typeof source.y !== "number" || typeof target.x !== "number" || typeof target.y !== "number") return;
 
-          const velocity = velocityRef.current[node.id] ?? { vx: 0, vy: 0 };
-          const anchor = anchors[node.id];
-          let fx = anchor ? (anchor.x - node.position.x) * 0.004 : 0;
-          let fy = anchor ? (anchor.y - node.position.y) * 0.004 : 0;
+    const dx = target.x - source.x;
+    const dy = target.y - source.y;
+    const curve = 0.18 + (1 - link.weight) * 0.24;
+    const mx = (source.x + target.x) / 2 - dy * curve;
+    const my = (source.y + target.y) / 2 + dx * curve;
+    const active = hoveredNode?.id === source.id || hoveredNode?.id === target.id || selectedId === source.id || selectedId === target.id;
+    const pulse = (Math.sin(Date.now() / 420 + link.weight * 9) + 1) / 2;
 
-          plan.edges.forEach((edge) => {
-            if (edge.source !== node.id && edge.target !== node.id) return;
-            const other = lookup[edge.source === node.id ? edge.target : edge.source];
-            if (!other) return;
-            const dx = other.position.x - node.position.x;
-            const dy = other.position.y - node.position.y;
-            const distance = Math.max(Math.hypot(dx, dy), 1);
-            const targetDistance = 300 - strengths[edge.id] * 155;
-            const pull = (distance - targetDistance) * 0.0009 * strengths[edge.id];
-            fx += (dx / distance) * pull;
-            fy += (dy / distance) * pull;
-          });
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(source.x, source.y);
+    ctx.quadraticCurveTo(mx, my, target.x, target.y);
+    ctx.strokeStyle = link.weight > 0.76 ? "rgba(27, 122, 143, 0.82)" : "rgba(26, 26, 26, 0.45)";
+    ctx.lineWidth = (active ? 2.8 : 1.5) + link.weight * 4.2;
+    ctx.globalAlpha = active ? 0.95 : 0.42 + link.weight * 0.36;
+    ctx.stroke();
 
-          currentNodes.forEach((other) => {
-            if (other.id === node.id) return;
-            const dx = node.position.x - other.position.x;
-            const dy = node.position.y - other.position.y;
-            const distance = Math.max(Math.hypot(dx, dy), 1);
-            if (distance < 170) {
-              const push = (170 - distance) * 0.00035;
-              fx += (dx / distance) * push;
-              fy += (dy / distance) * push;
-            }
-          });
-
-          fx += Math.sin(frame + index * 1.9) * 0.012;
-          fy += Math.cos(frame * 0.9 + index * 1.4) * 0.012;
-
-          const nextVelocity = {
-            vx: (velocity.vx + fx) * 0.92,
-            vy: (velocity.vy + fy) * 0.92,
-          };
-          velocityRef.current[node.id] = nextVelocity;
-
-          return {
-            ...node,
-            position: {
-              x: node.position.x + nextVelocity.vx,
-              y: node.position.y + nextVelocity.vy,
-            },
-          };
-        });
-      });
-      requestAnimationFrame(tick);
-    };
-
-    const animation = requestAnimationFrame(tick);
-    return () => {
-      active = false;
-      cancelAnimationFrame(animation);
-    };
-  }, [plan.edges, plan.papers, setNodes]);
-
-  const onNodeClick: NodeMouseHandler = (_, node) => {
-    selectPaper(plan.papers.find((paper) => paper.id === node.id) ?? null);
+    ctx.beginPath();
+    ctx.arc(mx, my, 2.5 + pulse * 3.5 + link.weight * 2, 0, Math.PI * 2);
+    ctx.fillStyle = link.weight > 0.76 ? "#1B7A8F" : "#C73E3A";
+    ctx.globalAlpha = active ? 0.9 : 0.35;
+    ctx.fill();
+    ctx.restore();
   };
 
-  const onNodeDragStart: OnNodeDrag = (_, node) => {
-    draggedNodeRef.current = node.id;
-    velocityRef.current[node.id] = { vx: 0, vy: 0 };
-  };
+  const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+    const radius = graphNodeRadius(node.influence);
+    const selected = node.id === selectedId;
+    const hovered = node.id === hoveredNode?.id;
+    const x = node.x ?? 0;
+    const y = node.y ?? 0;
 
-  const onNodeDragStop: OnNodeDrag = (_, node) => {
-    draggedNodeRef.current = null;
-    velocityRef.current[node.id] = { vx: 0, vy: 0 };
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(x + 5, y + 5, radius, 0, Math.PI * 2);
+    ctx.fillStyle = "#1A1A1A";
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(x, y, radius + (hovered ? 5 : 0), 0, Math.PI * 2);
+    ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : "#FFFDF6";
+    ctx.fill();
+    ctx.lineWidth = selected || hovered ? 4 : 3;
+    ctx.strokeStyle = "#1A1A1A";
+    ctx.stroke();
+
+    ctx.fillStyle = selected || hovered ? "#FFFDF6" : "#1A1A1A";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.font = `${Math.max(9, 12 / globalScale)}px var(--font-mono)`;
+    ctx.fillText(node.shortLabel, x, y - 4);
+    ctx.font = `${Math.max(7, 8 / globalScale)}px var(--font-mono)`;
+    ctx.fillText(`${Math.round(node.influence * 100)} INF`, x, y + 10);
+
+    ctx.font = `${Math.max(8, 9 / globalScale)}px var(--font-mono)`;
+    ctx.fillStyle = "#1A1A1A";
+    ctx.fillText(node.paper.year.toString(), x, y + radius + 14);
+    ctx.restore();
   };
 
   return (
@@ -321,24 +279,47 @@ function LiteratureGraphScreen() {
           Continue to Plan
         </Button>
       </header>
-      <section className="relative h-[calc(100vh-60px)] overflow-hidden">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={onNodeClick}
-          onNodeDragStart={onNodeDragStart}
-          onNodeDragStop={onNodeDragStop}
-          fitView
-          nodesDraggable
-          minZoom={0.55}
-          maxZoom={1.4}
-          className="dexter-flow"
-        >
-          <Background color="var(--industrial)" gap={28} size={1} />
-          <Controls className="border-2 border-industrial bg-card" />
-        </ReactFlow>
+      <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
+        <ForceGraph2D<ForceNode, ForceLink>
+          ref={graphRef}
+          graphData={graphData}
+          width={graphSize.width}
+          height={graphSize.height}
+          backgroundColor="rgba(252,247,236,1)"
+          nodeId="id"
+          nodeLabel={(node) => `${node.paper.title} (${node.paper.year})`}
+          nodeVal={(node) => node.val}
+          nodeCanvasObject={drawNode}
+          nodePointerAreaPaint={(node, color, ctx) => {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(node.x ?? 0, node.y ?? 0, graphNodeRadius(node.influence) + 12, 0, Math.PI * 2);
+            ctx.fill();
+          }}
+          linkCanvasObject={drawLink}
+          linkCanvasObjectMode={() => "replace"}
+          linkDirectionalParticles={(link) => Math.round(1 + link.weight * 3)}
+          linkDirectionalParticleSpeed={(link) => 0.003 + link.weight * 0.006}
+          linkDirectionalParticleWidth={(link) => 1.5 + link.weight * 3}
+          linkDirectionalParticleColor={(link) => (link.weight > 0.76 ? "#1B7A8F" : "#C73E3A")}
+          d3VelocityDecay={0.18}
+          d3AlphaDecay={0.015}
+          cooldownTicks={Infinity}
+          autoPauseRedraw={false}
+          enableNodeDrag
+          showPointerCursor={(object) => Boolean(object)}
+          onNodeHover={(node) => setHoveredNode(node)}
+          onNodeClick={(node) => selectPaper(node.paper)}
+          onNodeDragEnd={(node) => {
+            node.fx = undefined;
+            node.fy = undefined;
+            graphRef.current?.d3ReheatSimulation();
+          }}
+          onBackgroundClick={() => selectPaper(null)}
+        />
+        <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
+          Drag nodes / weighted force network / live literature topology
+        </div>
         <PaperPanel paper={selectedPaper} onClose={() => selectPaper(null)} />
       </section>
     </main>
