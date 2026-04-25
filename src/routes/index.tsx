@@ -218,10 +218,12 @@ function LiteratureGraphScreen() {
 
   useEffect(() => {
     let frame = 0;
+    let active = true;
     const anchors = Object.fromEntries(plan.papers.map((paper) => [paper.id, { x: paper.x, y: paper.y }]));
     const strengths = Object.fromEntries(plan.edges.map((edge) => [edge.id, edge.weight]));
 
     const tick = () => {
+      if (!active) return;
       frame += 0.012;
       setNodes((currentNodes) => {
         const lookup = Object.fromEntries(currentNodes.map((node) => [node.id, node]));
@@ -280,7 +282,10 @@ function LiteratureGraphScreen() {
     };
 
     const animation = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animation);
+    return () => {
+      active = false;
+      cancelAnimationFrame(animation);
+    };
   }, [plan.edges, plan.papers, setNodes]);
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
@@ -312,7 +317,20 @@ function LiteratureGraphScreen() {
         </Button>
       </header>
       <section className="relative h-[calc(100vh-60px)] overflow-hidden">
-        <ReactFlow nodes={nodes} edges={edges} onNodeClick={onNodeClick} fitView nodesDraggable={false}>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onNodeClick={onNodeClick}
+          onNodeDragStart={onNodeDragStart}
+          onNodeDragStop={onNodeDragStop}
+          fitView
+          nodesDraggable
+          minZoom={0.55}
+          maxZoom={1.4}
+          className="dexter-flow"
+        >
           <Background color="var(--industrial)" gap={28} size={1} />
           <Controls className="border-2 border-industrial bg-card" />
         </ReactFlow>
