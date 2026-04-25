@@ -256,6 +256,79 @@ function LiteratureGraphScreen() {
     ctx.restore();
   };
 
+  useEffect(() => {
+    nodesRef.current = graphData.nodes.map((node) => ({ ...node }));
+    linksRef.current = graphData.links.map((link) => ({ ...link }));
+
+    const simulation = forceSimulation<ForceNode>(nodesRef.current)
+      .force(
+        "link",
+        forceLink<ForceNode, ForceLink>(linksRef.current)
+          .id((node) => node.id)
+          .distance((link) => 210 - link.weight * 95)
+          .strength((link) => 0.06 + link.weight * 0.22),
+      )
+      .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(1))
+      .force("center", forceCenter(0, 0))
+      .alpha(0.95)
+      .alphaDecay(0.002)
+      .velocityDecay(0.18);
+
+    simulationRef.current = simulation;
+    return () => simulation.stop();
+  }, [graphData]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animation = 0;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = graphSize.width * dpr;
+    canvas.height = graphSize.height * dpr;
+    canvas.style.width = `${graphSize.width}px`;
+    canvas.style.height = `${graphSize.height}px`;
+
+    const render = (time: number) => {
+      const nodes = nodesRef.current;
+      const xs = nodes.map((node) => node.x ?? 0);
+      const ys = nodes.map((node) => node.y ?? 0);
+      const minX = Math.min(...xs) - 90;
+      const maxX = Math.max(...xs) + 90;
+      const minY = Math.min(...ys) - 90;
+      const maxY = Math.max(...ys) + 90;
+      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
+      transformRef.current = {
+        scale,
+        x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
+        y: graphSize.height / 2 - ((minY + maxY) / 2) * scale,
+      };
+
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, graphSize.width, graphSize.height);
+      ctx.fillStyle = "#FCF7EC";
+      ctx.fillRect(0, 0, graphSize.width, graphSize.height);
+      ctx.save();
+      ctx.translate(transformRef.current.x, transformRef.current.y);
+      ctx.scale(scale, scale);
+      linksRef.current.forEach((link) => drawLink(link, ctx, time));
+      nodes.forEach((node, index) => {
+        if (node !== dragRef.current) {
+          node.vx = (node.vx ?? 0) + Math.sin(time / 900 + index * 1.7) * 0.012;
+          node.vy = (node.vy ?? 0) + Math.cos(time / 850 + index * 1.3) * 0.012;
+        }
+        drawNode(node, ctx);
+      });
+      ctx.restore();
+      animation = requestAnimationFrame(render);
+    };
+    animation = requestAnimationFrame(render);
+    return () => cancelAnimationFrame(animation);
+  }, [drawLink, drawNode, graphSize.height, graphSize.width]);
+
   return (
     <main className={screenClass}>
       <header className="flex h-[60px] items-center justify-between border-b-2 border-industrial bg-background px-5">
