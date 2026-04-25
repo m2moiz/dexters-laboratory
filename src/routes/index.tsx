@@ -144,23 +144,26 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
+  const draggedNodeRef = useRef<string | null>(null);
+  const velocityRef = useRef<Record<string, { vx: number; vy: number }>>({});
 
-  const nodes = useMemo<Node[]>(
+  const initialNodes = useMemo<Node[]>(
     () =>
       plan.papers.map((paper) => ({
         id: paper.id,
         position: { x: paper.x, y: paper.y },
         data: { label: paper.title },
+        className: "dexter-graph-node",
         style: {
-          width: 112,
-          height: 112,
+          width: nodeSize(paper.influence),
+          height: nodeSize(paper.influence),
           borderRadius: 999,
           border: "3px solid var(--industrial)",
-          background: paper.id === selectedPaper?.id ? "var(--accent)" : "var(--card)",
-          color: paper.id === selectedPaper?.id ? "var(--accent-foreground)" : "var(--foreground)",
-          boxShadow: "4px 4px 0px var(--industrial)",
+          background: "var(--card)",
+          color: "var(--foreground)",
+          boxShadow: `${3 + Math.round(paper.influence * 4)}px ${3 + Math.round(paper.influence * 4)}px 0px var(--industrial)`,
           fontFamily: "var(--font-mono)",
-          fontSize: 10,
+          fontSize: 9 + paper.influence * 3,
           fontWeight: 800,
           textTransform: "uppercase",
           display: "flex",
@@ -169,18 +172,35 @@ function LiteratureGraphScreen() {
           padding: 12,
         },
       })),
-    [plan.papers, selectedPaper?.id],
+    [plan.papers],
   );
 
-  const edges = useMemo<Edge[]>(
+  const initialEdges = useMemo<Edge[]>(
     () =>
       plan.edges.map((edge) => ({
         ...edge,
-        type: "straight",
-        style: { stroke: "var(--industrial)", strokeWidth: 3 },
+        type: "smoothstep",
+        animated: true,
+        label: `${Math.round(edge.weight * 100)}%`,
+        labelStyle: {
+          fill: "var(--foreground)",
+          fontFamily: "var(--font-mono)",
+          fontSize: 10,
+          fontWeight: 800,
+        },
+        labelBgStyle: { fill: "var(--background)", fillOpacity: 0.92 },
+        style: {
+          stroke: edge.weight > 0.75 ? "var(--primary)" : "var(--industrial)",
+          strokeWidth: 1.5 + edge.weight * 4,
+          opacity: 0.38 + edge.weight * 0.55,
+          strokeDasharray: edge.weight > 0.75 ? "0" : "8 8",
+        },
       })),
     [plan.edges],
   );
+
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, , onEdgesChange] = useEdgesState(initialEdges);
 
   const onNodeClick: NodeMouseHandler = (_, node) => {
     selectPaper(plan.papers.find((paper) => paper.id === node.id) ?? null);
