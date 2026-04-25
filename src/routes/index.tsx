@@ -380,6 +380,7 @@ function LiteratureGraphScreen() {
       canvas.setPointerCapture(event.pointerId);
       moveNodeTo(node, event);
       setVisitedNodeIds((current) => new Set(current).add(node.id));
+      setHoveredNode(null);
       selectPaper(node.paper);
       simulationRef.current?.alpha(0.35).restart();
       canvas.style.cursor = "grabbing";
@@ -426,7 +427,7 @@ function LiteratureGraphScreen() {
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>
-        <PaperHoverCard node={hoveredNode} position={hoverCardPosition} />
+        <PaperHoverCard node={selectedPaper ? null : hoveredNode} position={hoverCardPosition} />
         <PaperDetailOverlay paper={selectedPaper} onClose={() => selectPaper(null)} />
       </section>
     </main>
