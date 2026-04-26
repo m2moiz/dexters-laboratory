@@ -240,6 +240,17 @@
     animation: dexter-instrument-pulse 1300ms ease-in-out 1700ms infinite;
   }
 
+  .dexter-beaker-mark {
+    filter:
+      drop-shadow(3px 3px 0 var(--industrial))
+      drop-shadow(0 0 18px color-mix(in oklab, var(--primary) 34%, transparent));
+    opacity: 0.92;
+  }
+
+  .dexter-beaker-mark img {
+    mix-blend-mode: multiply;
+  }
+
   .dexter-scan-field {
     background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--primary) 40%, transparent), transparent);
     background-size: 100% 220%;
