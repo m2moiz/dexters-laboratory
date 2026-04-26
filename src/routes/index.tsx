@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -182,6 +183,7 @@ function LiteratureGraphScreen() {
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [hoverCardPosition, setHoverCardPosition] = useState({ x: 0, y: 0 });
   const [visitedNodeIds, setVisitedNodeIds] = useState<Set<string>>(() => new Set());
+  const [bookmarkedNodeIds, setBookmarkedNodeIds] = useState<Set<string>>(() => new Set());
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
   const selectedPaperId = selectedPaper?.id;
@@ -256,6 +258,7 @@ function LiteratureGraphScreen() {
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
+    const bookmarked = bookmarkedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
     const hoverCharge = node.hoverCharge ?? 0;
     const pressure = easedPressure(hoverCharge);
@@ -265,6 +268,15 @@ function LiteratureGraphScreen() {
     const [hoverR, hoverG, hoverB] = pressureColor(pressure);
 
     ctx.save();
+    if (bookmarked) {
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 16 + breath * 5, 0, Math.PI * 2);
+      ctx.strokeStyle = "#1B7A8F";
+      ctx.globalAlpha = 0.7 + breath * 0.25;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     ctx.beginPath();
     ctx.arc(x, y, radius + 8 + breath * 8 + pressure * 18, 0, Math.PI * 2);
     ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.12 + pressure * 0.24})` : "rgba(27, 122, 143, 0.1)";
