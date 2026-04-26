@@ -48,8 +48,6 @@ const pressureColor = (pressure: number) => {
 
 type LassoPoint = { x: number; y: number };
 
-const wholeTextHighlight = "__whole_text__";
-
 const buildFreehandPath = (points: LassoPoint[], close = false) => {
   if (!points.length) return "";
   if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
