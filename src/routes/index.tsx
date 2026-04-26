@@ -38,6 +38,7 @@ type ForceNode = {
   shortLabel: string;
   val: number;
   phase: number;
+  hoverScale?: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -236,11 +237,12 @@ function LiteratureGraphScreen() {
   };
 
   const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D) => {
-    const radius = graphNodeRadius(node.influence);
+    const baseRadius = graphNodeRadius(node.influence);
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
+    const radius = baseRadius * (node.hoverScale ?? 1);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
 
@@ -256,7 +258,7 @@ function LiteratureGraphScreen() {
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(x, y, radius + (hovered ? 5 : 0), 0, Math.PI * 2);
+    ctx.arc(x, y, radius + (hovered ? 3 : 0), 0, Math.PI * 2);
     ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : visited ? "#B9B4AA" : "#FFFDF6";
     ctx.fill();
     ctx.globalAlpha = visited && !selected && !hovered ? 0.74 : 1;
@@ -320,6 +322,8 @@ function LiteratureGraphScreen() {
     const render = (time: number) => {
       const nodes = nodesRef.current;
       nodes.forEach((node, index) => {
+        const targetScale = node.id === hoveredNode?.id ? 1.26 : 1;
+        node.hoverScale = (node.hoverScale ?? 1) + (targetScale - (node.hoverScale ?? 1)) * 0.16;
         if (node !== dragRef.current) {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
@@ -343,10 +347,10 @@ function LiteratureGraphScreen() {
       simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
-      const minX = Math.min(...xs) - 90;
-      const maxX = Math.max(...xs) + 90;
-      const minY = Math.min(...ys) - 90;
-      const maxY = Math.max(...ys) + 90;
+      const minX = Math.min(...xs) - 115;
+      const maxX = Math.max(...xs) + 115;
+      const minY = Math.min(...ys) - 115;
+      const maxY = Math.max(...ys) + 115;
       const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
       const nextTransform = {
         scale,
@@ -501,6 +505,9 @@ function PaperHoverCard({ node, position }: { node: ForceNode | null; position: 
 function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: () => void }) {
   return (
     <div
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
       className={cn(
         "pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/35 p-5 opacity-0 backdrop-blur-[2px] transition-opacity duration-200",
         paper && "pointer-events-auto opacity-100",
