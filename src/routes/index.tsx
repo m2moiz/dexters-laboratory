@@ -390,13 +390,21 @@ function LiteratureGraphScreen() {
         }
       });
       simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
-      const xs = nodes.map((node) => node.x ?? 0);
-      const ys = nodes.map((node) => node.y ?? 0);
-      const minX = Math.min(...xs) - 115;
-      const maxX = Math.max(...xs) + 115;
-      const minY = Math.min(...ys) - 115;
-      const maxY = Math.max(...ys) + 115;
-      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
+      const padding = Math.max(34, Math.min(graphSize.width, graphSize.height) * 0.055);
+      const nodeExtents = nodes.map((node) => {
+        const visualRadius = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + (bookmarkedNodeIds.has(node.id) ? 24 : 14);
+        return {
+          minX: (node.x ?? 0) - visualRadius,
+          maxX: (node.x ?? 0) + visualRadius,
+          minY: (node.y ?? 0) - visualRadius,
+          maxY: (node.y ?? 0) + visualRadius + 18,
+        };
+      });
+      const minX = Math.min(...nodeExtents.map((extent) => extent.minX)) - padding;
+      const maxX = Math.max(...nodeExtents.map((extent) => extent.maxX)) + padding;
+      const minY = Math.min(...nodeExtents.map((extent) => extent.minY)) - padding;
+      const maxY = Math.max(...nodeExtents.map((extent) => extent.maxY)) + padding;
+      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 2.45);
       const nextTransform = {
         scale,
         x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
