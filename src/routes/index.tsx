@@ -797,10 +797,10 @@ function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(() => new Set());
+  const [highlights, setHighlights] = useState<ReportHighlight[]>([]);
   const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
   const [activeReference, setActiveReference] = useState<string | null>(null);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
