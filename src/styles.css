@@ -247,6 +247,50 @@
     opacity: 0.92;
   }
 
+  .dexter-beaker-glass {
+    fill: color-mix(in oklab, var(--primary) 28%, transparent);
+    stroke: color-mix(in oklab, var(--primary) 70%, var(--card));
+    stroke-width: 4;
+    stroke-linejoin: round;
+  }
+
+  .dexter-beaker-liquid {
+    fill: color-mix(in oklab, var(--primary) 58%, var(--card));
+  }
+
+  .dexter-beaker-neck,
+  .dexter-beaker-highlight {
+    fill: none;
+    stroke: color-mix(in oklab, var(--card) 54%, transparent);
+    stroke-width: 7;
+    stroke-linecap: round;
+  }
+
+  .dexter-beaker-highlight {
+    stroke-width: 5;
+    opacity: 0.45;
+  }
+
+  .dexter-beaker-hair {
+    fill: color-mix(in oklab, var(--lab-sign-shade) 78%, var(--lab-sign-fill));
+    stroke: color-mix(in oklab, var(--industrial) 54%, var(--lab-sign-shade));
+    stroke-width: 4;
+  }
+
+  .dexter-beaker-hair-line,
+  .dexter-beaker-glasses {
+    fill: none;
+    stroke: color-mix(in oklab, var(--industrial) 84%, var(--primary));
+    stroke-width: 5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .dexter-beaker-bubble {
+    fill: color-mix(in oklab, var(--card) 70%, var(--primary));
+    opacity: 0.68;
+  }
+
   .dexter-scan-field {
     background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--primary) 40%, transparent), transparent);
     background-size: 100% 220%;
