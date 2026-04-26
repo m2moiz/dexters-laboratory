@@ -103,6 +103,82 @@ const textOffsetInElement = (element: HTMLElement, node: Node, offset: number) =
   return total;
 };
 
+const AGENT_LOADING_MESSAGES = [
+  "Searching PubMed for related work…",
+  "Querying protocols.io for methodology…",
+  "Cross-referencing arXiv & bioRxiv preprints…",
+  "Browsing Sigma-Aldrich & Thermo Fisher catalogs…",
+  "Reading abstracts of top-ranked papers…",
+  "Identifying methodological gaps in prior work…",
+  "Mapping cell line requirements to ATCC inventory…",
+  "Estimating reagent volumes from protocol step…",
+  "Calculating EUR cost across line items…",
+  "Resolving timeline phase dependencies…",
+  "Drafting protocol step descriptions…",
+  "Validating against ExperimentPlanSchema (Zod strict)…",
+  "Cross-checking risks against domain priors…",
+  "Computing contingency budget reserve…",
+  "Finalizing literature graph topology…",
+];
+
+function GraphLoadingCard() {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [completed, setCompleted] = useState<string[]>([]);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const tickElapsed = window.setInterval(() => setElapsed((e) => e + 1), 1000);
+    return () => window.clearInterval(tickElapsed);
+  }, []);
+
+  useEffect(() => {
+    const rotate = window.setInterval(() => {
+      setMessageIndex((i) => {
+        setCompleted((c) => [AGENT_LOADING_MESSAGES[i], ...c].slice(0, 3));
+        return (i + 1) % AGENT_LOADING_MESSAGES.length;
+      });
+    }, 2400);
+    return () => window.clearInterval(rotate);
+  }, []);
+
+  const currentMsg = AGENT_LOADING_MESSAGES[messageIndex];
+
+  return (
+    <div className="pointer-events-none absolute right-5 top-5 z-20 w-[360px] border-2 border-industrial bg-card p-4 dexter-shadow">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+          § AGENT WORKING
+        </span>
+        <span className="font-mono text-[10px] font-bold tabular-nums text-muted-foreground">
+          {elapsed.toString().padStart(2, "0")}s
+        </span>
+      </div>
+      <div className="space-y-1.5">
+        {completed.map((msg, i) => (
+          <div key={`${i}-${msg}`} className="flex items-start gap-2 opacity-50">
+            <span className="mt-[2px] font-mono text-[11px] font-bold text-success">✓</span>
+            <span className="font-mono text-[10.5px] leading-snug text-foreground line-through decoration-1">
+              {msg}
+            </span>
+          </div>
+        ))}
+        <div className="flex items-start gap-2 pt-1">
+          <span className="relative mt-[5px] inline-flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping bg-primary opacity-60" />
+            <span className="relative inline-flex h-2 w-2 bg-primary" />
+          </span>
+          <span className="font-mono text-[12px] font-bold leading-snug text-foreground">
+            {currentMsg}
+          </span>
+        </div>
+      </div>
+      <div className="mt-3 h-[2px] w-full overflow-hidden bg-secondary">
+        <div className="dexter-loading-bar h-full w-1/3 bg-primary" />
+      </div>
+    </div>
+  );
+}
+
 type ForceNode = {
   id: string;
   paper: Paper;
@@ -610,6 +686,11 @@ function LiteratureGraphScreen() {
     <main className={screenClass}>
       <WorkflowHeader title={hypothesis}>
         <div className="flex items-center gap-3">
+          {planFetchStatus === "success" && (
+            <span className="border-2 border-industrial bg-success px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-primary-foreground">
+              ✓ Real papers loaded
+            </span>
+          )}
           {planFetchStatus === "error" && (
             <p className="font-mono text-[11px] font-bold uppercase text-critical max-w-[280px] truncate" title={apiError ?? ""}>
               Plan fetch failed — go back to retry
@@ -624,12 +705,20 @@ function LiteratureGraphScreen() {
             disabled={planFetchStatus === "error"}
             className="h-10 shrink-0 rounded-none border-2 border-industrial bg-accent px-5 font-mono text-xs font-bold uppercase text-accent-foreground hover:bg-accent disabled:opacity-50"
           >
-            {planFetchStatus === "success" ? "View Plan" : "Continue to Plan"}
+            {planFetchStatus === "success" ? "View Plan" : planFetchStatus === "loading" ? "Continue (will wait)" : "Continue to Plan"}
           </Button>
         </div>
       </WorkflowHeader>
-      <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
-        <canvas key={`graph-${plan.papers.length}-${plan.papers[0]?.id ?? "empty"}`} ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
+      <section
+        key={`graph-section-${plan.papers.length}-${plan.papers[0]?.id ?? "empty"}`}
+        ref={graphWrapRef}
+        className={cn(
+          "dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden transition-opacity duration-500",
+          planFetchStatus === "loading" && "opacity-75",
+        )}
+      >
+        <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
+        {planFetchStatus === "loading" && <GraphLoadingCard />}
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>
