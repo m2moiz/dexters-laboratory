@@ -329,8 +329,8 @@ function LiteratureGraphScreen() {
           .strength((link) => 0.1 + link.weight * 0.28),
       )
       .force("charge", forceManyBody<ForceNode>().strength((node) => -145 - node.influence * 115))
-      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 12).strength(0.78))
-      .force("radial", forceRadial<ForceNode>((node, index) => (index % 3 === 0 ? 86 : index % 3 === 1 ? 152 : 218) * graphLayoutScale, 0, 0).strength(0.055))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + 18).strength(1))
+      .force("radial", forceRadial<ForceNode>((node, index) => graphRingRadius(index), 0, 0).strength(0.13))
       .force("center", forceCenter(0, 0))
       .alpha(1)
       .alphaDecay(0.0016)
