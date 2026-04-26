@@ -837,11 +837,19 @@ function PlanViewScreen() {
     const text = selection?.toString().trim() ?? "";
     if (!text) return;
     const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    const element = range?.commonAncestorContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const startElement = range?.startContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const endElement = range?.endContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const element = startElement && startElement === endElement ? startElement : null;
     const id = element?.dataset.reportId;
-    if (!id) return;
+    if (!id || !range) return;
+    const start = textOffsetInElement(element, range.startContainer, range.startOffset);
+    const end = textOffsetInElement(element, range.endContainer, range.endOffset);
+    if (start === end) return;
     setActiveIds(new Set([id]));
-    setHighlightedIds((current) => new Set(current).add(id));
+    setHighlights((current) => [
+      ...current,
+      { key: `${id}-${Date.now()}-${current.length}`, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text },
+    ]);
     setSelectedText(text);
     selection?.removeAllRanges();
   };
@@ -849,14 +857,16 @@ function PlanViewScreen() {
   const openContextMenu = (event: React.MouseEvent) => {
     const target = event.target as HTMLElement;
     const reportElement = target.closest("[data-report-id]") as HTMLElement | null;
+    const highlightElement = target.closest("[data-highlight-key]") as HTMLElement | null;
     if (!reportElement && !selectedText) return;
     event.preventDefault();
     const id = reportElement?.dataset.reportId;
+    const highlightKey = highlightElement?.dataset.highlightKey ?? null;
     if (id && !activeIds.has(id)) {
       setActiveIds(new Set([id]));
-      setSelectedText(reportElement.innerText.trim());
+      setSelectedText(highlightKey ? (highlightElement?.innerText.trim() ?? "") : reportElement.innerText.trim());
     }
-    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null });
+    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null, highlightKey });
     setPromptBox(null);
   };
 
@@ -870,15 +880,11 @@ function PlanViewScreen() {
   };
 
   const undoHighlight = () => {
-    if (!contextMenu?.targetId) return;
-    setHighlightedIds((current) => {
-      const next = new Set(current);
-      next.delete(contextMenu.targetId as string);
-      return next;
-    });
+    if (!contextMenu?.highlightKey) return;
+    setHighlights((current) => current.filter((highlight) => highlight.key !== contextMenu.highlightKey));
     setActiveIds((current) => {
       const next = new Set(current);
-      next.delete(contextMenu.targetId as string);
+      if (contextMenu.targetId) next.delete(contextMenu.targetId);
       return next;
     });
     setContextMenu(null);
