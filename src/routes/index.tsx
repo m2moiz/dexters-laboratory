@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation } from "d3-force";
 import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -191,16 +191,20 @@ function LiteratureGraphScreen() {
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
-      nodes: plan.papers.map((paper) => ({
+      nodes: plan.papers.map((paper, index) => {
+        const angle = (index / Math.max(plan.papers.length, 1)) * Math.PI * 2 - Math.PI / 2;
+        const ring = index % 3 === 0 ? 74 : index % 3 === 1 ? 138 : 196;
+        return {
         id: paper.id,
         paper,
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
         phase: indexFromPaperId(paper.id) * 1.37,
-        x: paper.x * graphLayoutScale,
-        y: paper.y * graphLayoutScale,
-      })),
+        x: Math.cos(angle) * ring * graphLayoutScale,
+        y: Math.sin(angle) * ring * graphLayoutScale,
+      };
+      }),
       links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
     }),
     [plan.edges, plan.papers],
