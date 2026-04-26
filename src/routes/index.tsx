@@ -30,9 +30,9 @@ export const Route = createFileRoute("/")({
 
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphLayoutScale = 0.58;
-const graphNodeRadius = (influence: number) => 24 + influence * 26;
+const graphNodeRadius = (influence: number) => 21 + influence * 23;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
-const graphRingRadius = (index: number) => (index % 3 === 0 ? 86 : index % 3 === 1 ? 152 : 218) * graphLayoutScale;
+const graphRingRadius = (index: number) => (index % 3 === 0 ? 108 : index % 3 === 1 ? 184 : 268) * graphLayoutScale;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
   const stops = [
