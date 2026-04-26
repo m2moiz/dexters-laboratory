@@ -856,7 +856,7 @@ function PlanViewScreen() {
   const [selectedText, setSelectedText] = useState("");
   const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
-  const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
+  const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string; pinned?: boolean } | null>(null);
   const [correctionPrompt, setCorrectionPrompt] = useState("");
   const [exportingPdf, setExportingPdf] = useState(false);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
@@ -966,13 +966,19 @@ function PlanViewScreen() {
     setPromptBox(null);
   };
 
+  const closeTransientPrompt = () => {
+    window.setTimeout(() => {
+      setPromptBox((current) => (current?.pinned ? current : null));
+    }, 80);
+  };
+
   const openQueuedPrompt = (highlight: ReportHighlight, element: HTMLElement) => {
     const rect = element.getBoundingClientRect();
     setSelectedText(highlight.text);
     setActiveHighlightKey(highlight.key);
     setCorrectionPrompt(highlight.correction ?? "");
     setContextMenu(null);
-    setPromptBox({ x: rect.left + rect.width / 2, y: rect.bottom + 12, action: "Edit adjustment" });
+    setPromptBox({ x: rect.left + rect.width / 2, y: rect.bottom + 12, action: "Edit adjustment", pinned: false });
   };
 
   const downloadReportPdf = async () => {
