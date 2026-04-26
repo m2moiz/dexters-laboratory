@@ -246,6 +246,24 @@
     animation: dexter-ink-settle 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
+  .dexter-report-queued {
+    background: color-mix(in oklab, var(--lab-sign-glow) 28%, transparent);
+    text-decoration-style: solid;
+    text-decoration-color: var(--accent);
+  }
+
+  .dexter-report-queued::after {
+    content: "";
+    display: inline-block;
+    width: 0.58rem;
+    height: 0.58rem;
+    margin-left: 0.22rem;
+    border: 2px solid var(--industrial);
+    background: var(--accent);
+    vertical-align: 0.08em;
+    box-shadow: 1.5px 1.5px 0 var(--industrial);
+  }
+
   .dexter-reference-linked {
     background: color-mix(in oklab, var(--primary) 12%, transparent);
   }

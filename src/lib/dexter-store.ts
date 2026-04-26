@@ -2,7 +2,7 @@ import { create } from "zustand";
 
 import { samplePlan, type DexterPlan, type DexterScreen, type Paper } from "./mock-plan";
 
-export type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string };
+export type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string; correction?: string };
 
 type DexterState = {
   currentScreen: DexterScreen;
