@@ -247,10 +247,6 @@
     opacity: 0.92;
   }
 
-  .dexter-beaker-mark img {
-    mix-blend-mode: multiply;
-  }
-
   .dexter-scan-field {
     background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--primary) 40%, transparent), transparent);
     background-size: 100% 220%;
