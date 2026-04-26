@@ -738,11 +738,13 @@ function HighlightableText({
   reportId,
   highlights,
   onQueuedHover,
+  onQueuedLeave,
 }: {
   text: string;
   reportId: string;
   highlights: ReportHighlight[];
   onQueuedHover?: (highlight: ReportHighlight, element: HTMLElement) => void;
+  onQueuedLeave?: () => void;
 }) {
   const sortedHighlights = [...highlights]
     .filter((highlight) => highlight.reportId === reportId)
@@ -763,6 +765,9 @@ function HighlightableText({
           data-highlight-key={highlight.key}
           onMouseEnter={(event) => {
             if (highlight.correction) onQueuedHover?.(highlight, event.currentTarget);
+          }}
+          onMouseLeave={() => {
+            if (highlight.correction) onQueuedLeave?.();
           }}
           title={highlight.correction ? `Queued correction: ${highlight.correction}` : undefined}
         >
