@@ -852,30 +852,31 @@ function PlanViewScreen() {
     setContextMenu(null);
   };
 
-  const lassoStyle = {
-    left: Math.min(lasso.startX, lasso.x),
-    top: Math.min(lasso.startY, lasso.y),
-    width: Math.abs(lasso.x - lasso.startX),
-    height: Math.abs(lasso.y - lasso.startY),
-  };
+  const lassoPath = buildFreehandPath(lasso.points, lasso.points.length > 2);
 
   return (
     <main
       className={cn(screenClass, "dexter-report-stage")}
       onClick={() => setContextMenu(null)}
       onPointerMove={(event) => {
-        if (lasso.drawing) setLasso((current) => ({ ...current, x: event.clientX, y: event.clientY }));
+        if (lasso.drawing) {
+          setLasso((current) => ({
+            ...current,
+            points: [...current.points, { x: event.clientX, y: event.clientY }],
+          }));
+        }
       }}
       onPointerUp={() => {
         if (!lasso.drawing) return;
-        const box = { left: Math.min(lasso.startX, lasso.x), right: Math.max(lasso.startX, lasso.x), top: Math.min(lasso.startY, lasso.y), bottom: Math.max(lasso.startY, lasso.y) };
         const picked = [...(reportRef.current?.querySelectorAll<HTMLElement>("[data-report-id]") ?? [])].filter((element) => {
           const rect = element.getBoundingClientRect();
-          return rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
+          return lassoTouchesRect(lasso.points, rect);
         });
-        setSelectedIds(new Set(picked.map((element) => element.dataset.reportId).filter(Boolean) as string[]));
+        const pickedIds = picked.map((element) => element.dataset.reportId).filter(Boolean) as string[];
+        setActiveIds(new Set(pickedIds));
+        setHighlightedIds((current) => new Set([...current, ...pickedIds]));
         setSelectedText(picked.map((element) => element.innerText.trim()).join(" "));
-        setLasso((current) => ({ ...current, active: false, drawing: false }));
+        setLasso({ active: false, drawing: false, points: [] });
       }}
     >
       <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[1fr_auto] lg:px-8">
@@ -906,7 +907,7 @@ function PlanViewScreen() {
             onPointerDown={(event) => {
               if (!lasso.active) return;
               event.preventDefault();
-              setLasso({ active: true, drawing: true, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY });
+              setLasso({ active: true, drawing: true, points: [{ x: event.clientX, y: event.clientY }] });
             }}
           >
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
