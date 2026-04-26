@@ -587,16 +587,16 @@ function PaperDetailOverlay({
             onClick={() => onToggleBookmark(paper.id)}
             aria-label={bookmarked ? "Remove bookmark" : "Bookmark paper"}
             className={cn(
-              "absolute right-24 top-5 flex h-9 w-9 items-center justify-center border-2 border-industrial bg-background transition-transform hover:-translate-y-0.5",
+              "absolute right-24 top-5 flex h-8 w-8 items-center justify-center border-2 border-industrial bg-background transition-transform hover:-translate-y-0.5",
               bookmarked && "bg-primary text-primary-foreground",
             )}
           >
-            <Bookmark size={17} fill={bookmarked ? "currentColor" : "none"} strokeWidth={2.5} />
+            <Bookmark size={15} fill={bookmarked ? "currentColor" : "none"} strokeWidth={2.5} />
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-5 top-5 border-2 border-industrial bg-background px-3 py-1 font-mono text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
+            className="absolute right-5 top-5 flex h-8 items-center border-2 border-industrial bg-background px-3 font-mono text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
           >
             Close
           </button>
