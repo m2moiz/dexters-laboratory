@@ -30,6 +30,21 @@ export const Route = createFileRoute("/")({
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 16 + influence * 15;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
+const easedPressure = (value: number) => value * value * (3 - 2 * value);
+const pressureColor = (pressure: number) => {
+  const stops = [
+    [27, 122, 143],
+    [234, 151, 72],
+    [210, 76, 68],
+    [157, 38, 52],
+  ];
+  const scaled = Math.min(stops.length - 1.001, pressure * (stops.length - 1));
+  const index = Math.floor(scaled);
+  const local = scaled - index;
+  const start = stops[index];
+  const end = stops[index + 1];
+  return start.map((channel, channelIndex) => Math.round(channel + (end[channelIndex] - channel) * local));
+};
 
 type ForceNode = {
   id: string;
@@ -244,17 +259,16 @@ function LiteratureGraphScreen() {
     const visited = visitedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
     const hoverCharge = node.hoverCharge ?? 0;
+    const pressure = easedPressure(hoverCharge);
     const radius = baseRadius * (node.hoverScale ?? 1);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
-    const hoverR = Math.round(27 + (199 - 27) * hoverCharge);
-    const hoverG = Math.round(122 + (62 - 122) * hoverCharge);
-    const hoverB = Math.round(143 + (58 - 143) * hoverCharge);
+    const [hoverR, hoverG, hoverB] = pressureColor(pressure);
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, radius + 8 + breath * 8 + hoverCharge * 10, 0, Math.PI * 2);
-    ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.14 + hoverCharge * 0.18})` : "rgba(27, 122, 143, 0.1)";
+    ctx.arc(x, y, radius + 8 + breath * 8 + pressure * 18, 0, Math.PI * 2);
+    ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.12 + pressure * 0.24})` : "rgba(27, 122, 143, 0.1)";
     ctx.fill();
 
     ctx.beginPath();
