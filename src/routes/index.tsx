@@ -39,6 +39,7 @@ type ForceNode = {
   val: number;
   phase: number;
   hoverScale?: number;
+  hoverCharge?: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -242,14 +243,18 @@ function LiteratureGraphScreen() {
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
+    const hoverCharge = node.hoverCharge ?? 0;
     const radius = baseRadius * (node.hoverScale ?? 1);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
+    const hoverR = Math.round(27 + (199 - 27) * hoverCharge);
+    const hoverG = Math.round(122 + (62 - 122) * hoverCharge);
+    const hoverB = Math.round(143 + (58 - 143) * hoverCharge);
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, radius + 8 + breath * 8, 0, Math.PI * 2);
-    ctx.fillStyle = hovered || selected ? "rgba(199, 62, 58, 0.14)" : "rgba(27, 122, 143, 0.1)";
+    ctx.arc(x, y, radius + 8 + breath * 8 + hoverCharge * 10, 0, Math.PI * 2);
+    ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.14 + hoverCharge * 0.18})` : "rgba(27, 122, 143, 0.1)";
     ctx.fill();
 
     ctx.beginPath();
@@ -259,7 +264,7 @@ function LiteratureGraphScreen() {
 
     ctx.beginPath();
     ctx.arc(x, y, radius + (hovered ? 3 : 0), 0, Math.PI * 2);
-    ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : visited ? "#B9B4AA" : "#FFFDF6";
+    ctx.fillStyle = selected ? "#C73E3A" : hovered ? `rgb(${hoverR}, ${hoverG}, ${hoverB})` : visited ? "#B9B4AA" : "#FFFDF6";
     ctx.fill();
     ctx.globalAlpha = visited && !selected && !hovered ? 0.74 : 1;
     ctx.lineWidth = selected || hovered ? 4 : 3;
@@ -321,9 +326,12 @@ function LiteratureGraphScreen() {
 
     const render = (time: number) => {
       const nodes = nodesRef.current;
+      const hovered = hoveredNode ? nodes.find((node) => node.id === hoveredNode.id) : null;
       nodes.forEach((node, index) => {
-        const targetScale = node.id === hoveredNode?.id ? 1.26 : 1;
-        node.hoverScale = (node.hoverScale ?? 1) + (targetScale - (node.hoverScale ?? 1)) * 0.16;
+        const isHovered = node.id === hoveredNode?.id;
+        const targetCharge = isHovered ? 1 : 0;
+        node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.018 : 0.12)));
+        node.hoverScale = 1 + (node.hoverCharge ?? 0) * 0.58;
         if (node !== dragRef.current) {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
@@ -342,6 +350,14 @@ function LiteratureGraphScreen() {
             Math.sin(orbit) * orbitalForce +
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
             (y / distance) * centerPull;
+        }
+        if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
+          const dx = (node.x ?? 0) - (hovered.x ?? 0);
+          const dy = (node.y ?? 0) - (hovered.y ?? 0);
+          const distance = Math.max(Math.hypot(dx, dy), 1);
+          const influence = Math.max(0, 1 - distance / 240) * (hovered.hoverCharge ?? 0);
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 0.42;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 0.42;
         }
       });
       simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
