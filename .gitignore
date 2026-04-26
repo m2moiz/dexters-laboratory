@@ -29,3 +29,4 @@ pnpm-debug.log*
 # OS / editor
 .DS_Store
 *.local
+.vercel
