@@ -36,4 +36,4 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLAREAPI }}
           accountId: 32d9bdbd51b7230fe3f7f0b5626c4ed7
           workingDirectory: frontend
-          command: deploy --config wrangler.jsonc
+          command: deploy --config wrangler.deploy.jsonc
