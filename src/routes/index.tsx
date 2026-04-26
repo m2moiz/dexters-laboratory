@@ -831,6 +831,7 @@ function PlanViewScreen() {
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
   const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
+  const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
   const [correctionPrompt, setCorrectionPrompt] = useState("");
@@ -879,11 +880,10 @@ function PlanViewScreen() {
     if (start === end) return;
     const rect = range.getBoundingClientRect();
     setActiveIds(new Set([id]));
-    setHighlights((current) => [
-      ...current,
-      { key: `${id}-${Date.now()}-${current.length}`, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text },
-    ]);
+    const highlightKey = `${id}-${Date.now()}-${highlights.length}`;
+    setHighlights((current) => [...current, { key: highlightKey, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text }]);
     setSelectedText(text);
+    setActiveHighlightKey(highlightKey);
     setCorrectionPrompt("");
     setPromptBox({
       x: rect.left + rect.width / 2,
@@ -933,8 +933,18 @@ function PlanViewScreen() {
   const startPrompt = (action: string) => {
     if (!contextMenu) return;
     setCorrectionPrompt("");
+    setActiveHighlightKey(contextMenu.highlightKey);
     setPromptBox({ x: contextMenu.x, y: contextMenu.y, action });
     setContextMenu(null);
+  };
+
+  const queueCorrection = () => {
+    if (!activeHighlightKey || !correctionPrompt.trim()) return;
+    setHighlights((current) =>
+      current.map((highlight) => (highlight.key === activeHighlightKey ? { ...highlight, correction: correctionPrompt.trim() } : highlight)),
+    );
+    setCorrectionPrompt("");
+    setPromptBox(null);
   };
 
   const downloadReportPdf = async () => {
@@ -1074,7 +1084,7 @@ function PlanViewScreen() {
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
             <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
-              <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} />
+                      <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} />
             </p>
             {plan.sections.map((section, sectionIndex) => (
               <section
@@ -1154,7 +1164,12 @@ function PlanViewScreen() {
             placeholder="Tell Dexter exactly how to revise this passage..."
             className="mt-3 rounded-none border-2 border-industrial bg-background text-sm"
           />
-          <Button className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary">
+            <Button
+              type="button"
+              onClick={queueCorrection}
+              disabled={!correctionPrompt.trim()}
+              className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary disabled:opacity-50"
+            >
             Queue correction
           </Button>
         </div>
