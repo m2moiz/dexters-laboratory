@@ -238,6 +238,45 @@
     background-size: 100% 220%;
     animation: dexter-scan 1100ms linear infinite;
   }
+
+  .dexter-neon-sign {
+    overflow: visible;
+    animation: dexter-sign-power 1700ms steps(1, end) 1520ms both;
+  }
+
+  .dexter-sign-title {
+    animation: dexter-letter-glow 1700ms steps(1, end) 1520ms both;
+    color: var(--primary);
+    text-shadow: none;
+  }
+
+  .dexter-spark {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border: 2px solid var(--industrial);
+    background: var(--accent);
+    opacity: 0;
+    box-shadow: 0 0 0 color-mix(in oklab, var(--accent) 0%, transparent);
+  }
+
+  .dexter-spark-a {
+    right: 12%;
+    top: -12px;
+    animation: dexter-spark-jump 560ms ease-out 1680ms both;
+  }
+
+  .dexter-spark-b {
+    left: 16%;
+    top: 42%;
+    animation: dexter-spark-jump 520ms ease-out 1960ms both;
+  }
+
+  .dexter-spark-c {
+    bottom: -10px;
+    right: 28%;
+    animation: dexter-spark-jump 620ms ease-out 2220ms both;
+  }
 }
 
 @keyframes dexter-grid-wake {
