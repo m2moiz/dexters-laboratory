@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "dexters-laboratory",
+  "main": "dist/server/server.js",
+  "compatibility_date": "2025-04-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "observability": { "enabled": true }
+}

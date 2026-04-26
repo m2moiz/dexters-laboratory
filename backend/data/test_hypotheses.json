@@ -1,0 +1,688 @@
+[
+  {
+    "id": "HYPO-001",
+    "title": "HeLa cryopreservation - trehalose vs DMSO",
+    "domain": "cell_biology",
+    "experimentType": "in_vitro",
+    "hypothesis": "Replacing sucrose with trehalose as a cryoprotectant in the freezing medium will increase post-thaw viability of HeLa cells by at least 15 percentage points compared to the standard DMSO protocol, due to trehalose's superior membrane stabilization at low temperatures.",
+    "expectedNovelty": "similar_exists",
+    "demoPriority": 1,
+    "notes": "Best demo hypothesis. Concrete, visual, budget realistic (~EUR 5,860). Uses HeLa + trehalose from catalog.",
+    "keyParameters": {
+      "primaryEndpoint": "Post-thaw cell viability (%) at 24h by trypan blue exclusion",
+      "minimumEffectSize": "≥15 percentage points above DMSO control",
+      "statisticalDesign": "n=12 independent freeze-thaw cycles per condition, paired t-test or Mann-Whitney U",
+      "experimentDuration": "6 weeks",
+      "estimatedBudgetEur": 5860
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "Cell viability counting at 24h, 48h, 72h post-thaw (trypan blue exclusion, hemocytometer or automated counter)",
+        "Controlled-rate cryopreservation at -1°C/min (Mr. Frosty or programmatic controlled-rate freezer)",
+        "Long-term storage in liquid nitrogen (≥1 week before thaw)",
+        "Statistical comparison across ≥12 replicates per condition (paired t-test or Mann-Whitney U, p<0.05 threshold)"
+      ],
+      "recommended": [
+        "Post-thaw proliferation curve to assess recovery doubling time (72h culture after thaw)",
+        "Membrane integrity assay by flow cytometry (LIVE/DEAD Fixable Aqua or calcein AM + PI dual staining)",
+        "Pre-freeze viability confirmation (>95% baseline required for valid experiment)"
+      ],
+      "optional": [
+        "Metabolic activity assay (CellTiter-Glo ATP luminescence) as orthogonal viability endpoint",
+        "Early apoptosis profiling (Annexin V / caspase-3 activation at 4h post-thaw)",
+        "Electron microscopy for ultrastructural membrane damage assessment",
+        "DSC (differential scanning calorimetry) to characterize trehalose glass transition temperature"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "CO2 incubator (37°C, 5% CO2, humidified)",
+        "Biosafety cabinet class II (BSL-1)",
+        "Hemocytometer or automated cell counter (e.g., Countess II)",
+        "Mr. Frosty or controlled-rate freezer (-1°C/min to -80°C)",
+        "Liquid nitrogen storage dewar (long-term cell storage)",
+        "-80°C freezer (intermediate storage before LN2 transfer)"
+      ],
+      "recommended": [
+        "Flow cytometer with 488 nm and 405 nm lasers (for LIVE/DEAD / calcein-AM / PI staining)",
+        "Inverted light microscope (cell morphology assessment)",
+        "Microplate reader (fluorescence mode, for calcein-AM/PI assay)"
+      ],
+      "optional": [
+        "Confocal microscope (membrane integrity imaging)",
+        "Luminometer or plate reader with luminescence module (CellTiter-Glo)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Target cell line (HeLa CCL-2 ATCC or equivalent, passage <30)",
+        "Experimental cryoprotectant: trehalose dihydrate 99% (0.5–2 M stock in PBS, filter-sterile)",
+        "Control cryoprotectant: DMSO cell-culture grade (10% v/v final in complete medium)",
+        "Complete culture medium: DMEM high glucose + 10% FBS + 1% Pen-Strep",
+        "Cell dissociation: Trypsin-EDTA 0.25% (harvest before cryopreservation)",
+        "Viability dye: Trypan Blue 0.4% (primary readout, 1:1 mix with cells)"
+      ],
+      "recommended": [
+        "Cryovials 1.8 mL sterile (externally threaded for LN2)",
+        "PBS pH 7.4 (washing steps, cryoprotectant stock preparation)",
+        "L-Glutamine 200 mM (supplement for extended post-thaw culture)",
+        "Sterile syringe filters 0.22 µm (sterilize trehalose stock)",
+        "96-well TC-treated plates (post-thaw proliferation assay)"
+      ],
+      "optional": [
+        "LIVE/DEAD Fixable Aqua kit (flow cytometry, more precise than trypan for low-viability samples)",
+        "CellTiter-Glo (ATP-based metabolic activity, orthogonal endpoint)",
+        "Annexin V / PI apoptosis kit (early apoptosis at 4h post-thaw)",
+        "LDH cytotoxicity assay (membrane damage marker, colorimetric)"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-002",
+    "title": "LGG probiotic gut permeability in C57BL/6 mice",
+    "domain": "gut_health",
+    "experimentType": "in_vivo",
+    "hypothesis": "Supplementing C57BL/6 mice with Lactobacillus rhamnosus GG for 4 weeks will reduce intestinal permeability by at least 30% compared to controls, measured by FITC-dextran assay, due to upregulation of tight junction proteins claudin-1 and occludin.",
+    "expectedNovelty": "similar_exists",
+    "demoPriority": 2,
+    "notes": "Strong secondary demo. Well-established field, Tavily will find many references.",
+    "keyParameters": {
+      "primaryEndpoint": "Serum FITC-dextran (relative fluorescence units) at 4h post-gavage",
+      "minimumEffectSize": "≥30% reduction in FITC-dextran permeability vs PBS control",
+      "statisticalDesign": "n=10 per group (control vs LGG), one-way ANOVA + Tukey post-hoc",
+      "experimentDuration": "8 weeks (4 weeks treatment + 4 weeks analysis)",
+      "estimatedBudgetEur": 16500
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "FITC-dextran intestinal permeability assay (600 mg/kg oral gavage, serum collected at 4h, fluorescence at 485/528 nm)",
+        "Oral gavage for daily probiotic dosing (1×10⁹ CFU LGG in 200 µL PBS, 20G needle)",
+        "qPCR for intestinal claudin-1 (Cldn1) and occludin (Ocln) mRNA from jejunum/colon tissue",
+        "CFU plating on MRS agar to verify LGG viability in gavage stock on each dosing day"
+      ],
+      "recommended": [
+        "Western blot (claudin-1 and occludin protein, intestinal lysate from RIPA buffer extraction)",
+        "H&E histology of intestinal sections (assess villus height, crypt depth, epithelial integrity)",
+        "Mouse IL-6 ELISA (serum cytokine as systemic inflammatory marker)",
+        "Body weight monitoring twice weekly (welfare indicator and treatment tolerability)"
+      ],
+      "optional": [
+        "16S rRNA gut microbiome sequencing of caecal content (stool day 0, 14, 28)",
+        "Mouse TNF-alpha ELISA (additional inflammatory cytokine panel)",
+        "Immunofluorescence for claudin-1 and occludin localization in tissue sections",
+        "Mucosal secretory IgA (sIgA) ELISA",
+        "TEER measurement in ex vivo Ussing chamber"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "Fluorescence microplate reader (485 nm excitation / 528 nm emission for FITC-dextran)",
+        "qPCR thermocycler with real-time fluorescence detection",
+        "Biosafety cabinet (LGG preparation and gavage dosing)",
+        "Anaerobic workstation or jar (LGG culture at 37°C)",
+        "Tissue homogenizer (intestinal tissue for RNA/protein extraction)",
+        "Microcentrifuge and refrigerated centrifuge"
+      ],
+      "recommended": [
+        "Western blot system with transfer apparatus and ChemiDoc imager",
+        "Cryostat or paraffin embedding station (histology sections)",
+        "Bright-field microscope (H&E slide review)",
+        "Plate reader (ELISA absorbance at 450 nm)"
+      ],
+      "optional": [
+        "Confocal microscope (immunofluorescence localization)",
+        "Ussing chamber system (ex vivo permeability measurement)",
+        "16S sequencing service (outsourced or in-house Illumina MiSeq)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Lactobacillus rhamnosus GG ATCC 53103 (reference strain, 1×10⁹ CFU/day gavage dose)",
+        "C57BL/6J mice male 8-10 weeks (minimum 10 per group + 3 extra per group for attrition)",
+        "FITC-Dextran 4 kDa (intestinal permeability tracer, 600 mg/kg oral)",
+        "MRS Broth (LGG culture medium, anaerobic 37°C)",
+        "PBS pH 7.4 (probiotic suspension vehicle)",
+        "RNeasy Mini Kit (intestinal tissue RNA extraction for qPCR)",
+        "iScript cDNA Synthesis Kit + SYBR Green Supermix",
+        "Mouse Claudin-1 qPCR primer pair (primary target gene)",
+        "Mouse GAPDH qPCR primer pair (housekeeping normalization)",
+        "Rodent standard chow 2018S (control diet)"
+      ],
+      "recommended": [
+        "RIPA lysis buffer + Halt protease inhibitor (protein extraction for WB)",
+        "Anti-Claudin-1 rabbit monoclonal antibody (WB 1:1000)",
+        "Anti-rabbit HRP secondary + ECL substrate + NuPAGE gels (WB detection)",
+        "H&E staining kit + 10% neutral buffered formalin (histology)",
+        "Mouse IL-6 ELISA kit (serum inflammatory marker)",
+        "MRS Agar plates (CFU counting of LGG gavage stock)",
+        "Sterile gavage needles 20G × 50 mm (oral dosing)",
+        "Micro blood collection tubes EDTA 0.5 mL (serum collection)",
+        "Mouse Occludin qPCR primer pair (secondary tight junction marker)"
+      ],
+      "optional": [
+        "ZymoBIOMICS DNA Miniprep Kit (16S stool microbiome)",
+        "Mouse TNF-alpha ELISA kit (additional cytokine)",
+        "Anti-Occludin antibody (WB/IF)",
+        "Goat anti-rabbit Alexa Fluor 488 + ProLong Gold DAPI (IF)",
+        "Mouse sIgA ELISA kit"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-003",
+    "title": "CRP paper biosensor below 0.5 mg/L in whole blood",
+    "domain": "diagnostics",
+    "experimentType": "electrochemical",
+    "hypothesis": "A paper-based electrochemical biosensor functionalized with anti-CRP antibodies will detect C-reactive protein in whole blood at concentrations below 0.5 mg/L within 10 minutes, matching laboratory ELISA sensitivity without requiring sample preprocessing.",
+    "expectedNovelty": "similar_exists",
+    "demoPriority": 3,
+    "notes": "Good for showing electrochemical domain. Budget higher (~EUR 8,000). Complex protocol but impressive.",
+    "keyParameters": {
+      "primaryEndpoint": "Limit of detection (LOD) for CRP in spiked whole blood (mg/L)",
+      "minimumEffectSize": "LOD ≤ 0.5 mg/L within 10-minute assay time",
+      "statisticalDesign": "LOD = mean blank + 3σ (n=10 replicates per concentration), validated in ≥5 independent donor blood samples",
+      "experimentDuration": "10 weeks (fabrication, characterisation, validation)",
+      "estimatedBudgetEur": 8200
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "Screen-printed electrode functionalization with EDC/NHS carbodiimide coupling chemistry (anti-CRP antibody immobilization)",
+        "BSA blocking of non-specific binding sites (1% BSA in PBS, 30 min RT)",
+        "Electrochemical impedance spectroscopy (EIS) for each fabrication step (ferri/ferrocyanide redox probe, 5 mM, 0.1-100 kHz)",
+        "Amperometric or DPV detection of CRP in spiked matrix (0.01–10 mg/L calibration curve)",
+        "LOD and LOQ calculation (blank + 3σ and blank + 10σ, n=10)",
+        "Reference ELISA validation (high-sensitivity CRP ELISA on same samples)"
+      ],
+      "recommended": [
+        "Cyclic voltammetry (CV) for electrode surface characterization before and after modification",
+        "Gold nanoparticle signal amplification (AuNP-antibody conjugate on detection antibody)",
+        "Nafion 5% protective membrane layer (electrode stability in blood matrix)",
+        "Scanning electron microscopy (SEM) of electrode surface (optional morphology confirmation)",
+        "Cross-reactivity panel (albumin, IgG, fibrinogen at 10× physiological concentration)"
+      ],
+      "optional": [
+        "Differential pulse voltammetry (DPV) as alternative to EIS for signal readout",
+        "Atomic force microscopy (AFM) surface roughness characterization",
+        "Shelf-life stability study (sensors stored at 4°C, tested at day 0, 7, 14, 30)",
+        "Selectivity testing against panel of 10 serum proteins",
+        "Clinical sample validation (certified CRP reference serum, JCTLM-listed method comparison)"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "Potentiostat / impedance analyzer (e.g., Biologic SP-50 or PalmSens4) with EIS capability",
+        "3-electrode cell setup (working = modified SPE, reference = Ag/AgCl, counter = Pt wire)",
+        "Micropipettes 0.5–1000 µL + tips",
+        "pH meter (buffer and electrolyte verification)",
+        "Analytical balance (reagent preparation)"
+      ],
+      "recommended": [
+        "Scanning electron microscope (electrode surface morphology)",
+        "UV-Vis spectrophotometer (AuNP conjugation verification at 520 nm)",
+        "Fluorescence plate reader (if parallel ELISA validation on same plate)",
+        "Fume hood (EDC/NHS coupling in phosphate buffer)"
+      ],
+      "optional": [
+        "Atomic force microscope (layer-by-layer surface characterization)",
+        "Dynamic light scattering (DLS for AuNP size verification)",
+        "Plasma cleaner (surface activation before functionalization)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Screen-printed carbon electrode strips (3-electrode, TE100 or equivalent)",
+        "Anti-CRP monoclonal antibody for surface functionalization (capture)",
+        "EDC (1-ethyl-3-(3-dimethylaminopropyl)carbodiimide HCl) — prepare fresh",
+        "NHS (N-hydroxysuccinimide) — use with EDC for stable amide bond",
+        "BSA fraction V (blocking agent, 1% in PBS)",
+        "Human CRP recombinant protein (calibration standard, 0.01–10 mg/L serial dilutions)",
+        "Potassium ferricyanide + potassium ferrocyanide (5 mM each, redox probe for EIS/CV)",
+        "Potassium chloride 0.1 M (supporting electrolyte)",
+        "Pooled human EDTA whole blood (matrix validation, spiked with known CRP concentrations)",
+        "CRP high-sensitivity ELISA kit (gold standard reference method)",
+        "Whatman Grade 4 filter paper (biosensor substrate)"
+      ],
+      "recommended": [
+        "Gold nanoparticles 20 nm citrate-capped (signal amplification for sub-0.5 mg/L LOD)",
+        "Nafion 5% solution (protective membrane for whole-blood stability)",
+        "PBS pH 7.4 (all washing and blocking steps)",
+        "Ultrapure MilliQ water (all buffer preparation)"
+      ],
+      "optional": [
+        "Ferrocene methanol (redox reference standard, electrochemical calibration)",
+        "Sulfo-NHS (water-soluble NHS ester for aqueous coupling)",
+        "Ethanolamine (quenching excess NHS esters after coupling)"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-004",
+    "title": "Sporomusa ovata CO2 to acetate at -400 mV vs SHE",
+    "domain": "climate",
+    "experimentType": "electrochemical",
+    "hypothesis": "Introducing Sporomusa ovata into a bioelectrochemical system at a cathode potential of -400mV vs SHE will fix CO2 into acetate at a rate of at least 150 mmol/L/day, outperforming current biocatalytic carbon capture benchmarks by at least 20%.",
+    "expectedNovelty": "similar_exists",
+    "demoPriority": 4,
+    "notes": "Climate domain. Directly from brief. Specialist reagents available in catalog.",
+    "keyParameters": {
+      "primaryEndpoint": "Acetate production rate (mmol/L/day) by enzymatic assay or HPLC",
+      "minimumEffectSize": "≥150 mmol acetate/L/day, ≥20% above literature benchmark",
+      "statisticalDesign": "n=3 BES reactors per condition, Coulombic efficiency calculated from charge passed",
+      "experimentDuration": "8 weeks (BES construction, inoculation, steady-state operation, analysis)",
+      "estimatedBudgetEur": 13500
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "Chronoamperometry at fixed cathode potential (-400 mV vs SHE = -597 mV vs Ag/AgCl sat. KCl)",
+        "CO2 sparging of catholyte (99.9% CO2 at 20 mL/min, continuous pH monitoring)",
+        "Acetate quantification by enzymatic assay (Megazyme) or HPLC (Aminex HPX-87H column)",
+        "Coulombic efficiency calculation (moles acetate per moles electrons delivered)",
+        "Anaerobic technique throughout (glovebox or Schlenk-line for all manipulations)"
+      ],
+      "recommended": [
+        "HPLC organic acid profiling (acetate, formate, succinate — Aminex HPX-87H, 5 mM H2SO4 mobile phase)",
+        "SEM imaging of biocathode surface (biofilm visualization before and after experiment)",
+        "Current density vs time trace (chronoamperometry, assess biofilm establishment phase)",
+        "16S rRNA quantification of Sporomusa on cathode (qPCR with genus-specific primers)"
+      ],
+      "optional": [
+        "EIS of biocathode (charge transfer resistance, biofilm capacitance)",
+        "Scanning electron microscopy with EDX (elemental mapping of biofilm)",
+        "LC-MS metabolomics (identify minor co-products)",
+        "Gas chromatography (H2 and CO2 headspace analysis, quantify gas conversion)",
+        "Hydrogen control experiment (replace CO2 with H2 as electron donor baseline)"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "Potentiostat / galvanostat with EIS module (Biologic SP-50 or equivalent)",
+        "Anaerobic glovebox or anaerobic chamber (O2 < 0.5 ppm for all manipulations)",
+        "H-cell BES reactor (borosilicate glass, two-chamber separated by Nafion 117 membrane)",
+        "CO2 sparging system (mass flow controller + tubing + sparger stone)",
+        "pH controller or meter (maintain catholyte pH 7.0 ± 0.2)",
+        "Autoclave (sterilize all glassware and media)"
+      ],
+      "recommended": [
+        "HPLC system with Aminex HPX-87H column + RI detector (organic acid quantification)",
+        "SEM (biocathode biofilm imaging)",
+        "Thermostated water bath or heating jacket (37°C BES operation)",
+        "Gas-tight sampling syringes (headspace analysis)"
+      ],
+      "optional": [
+        "GC-MS (headspace H2 and CO2 quantification)",
+        "LC-MS (metabolomics for minor co-products)",
+        "Fluorescence microscope with DAPI + live/dead staining (planktonic cells vs biofilm)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Sporomusa ovata DSM 2662 (DSMZ ampoule — strictly anaerobic acetogen)",
+        "Carbon cloth electrode AvCarb P50 (high surface-area biocathode)",
+        "Titanium wire 0.5 mm (corrosion-resistant current collector)",
+        "Ag/AgCl reference electrode saturated KCl (+197 mV vs SHE)",
+        "Platinum wire counter electrode (inert anode)",
+        "Nafion 117 proton-exchange membrane (pre-treated in 5% H2SO4, then ultrapure water)",
+        "CO2 gas cylinder 99.9% (continuous sparging of catholyte at 20 mL/min)",
+        "Megazyme Acetic Acid Assay Kit (primary acetate quantification)",
+        "HEPES buffer 1 M (pH maintenance in BES medium, 50 mM final)",
+        "Mineral salts for Sporomusa growth medium (NH4Cl, K2HPO4, MgSO4, CaCl2, trace elements)"
+      ],
+      "recommended": [
+        "Indigo carmine (redox indicator for anaerobic medium quality)",
+        "Resazurin sodium salt (anaerobic viability indicator)",
+        "Bio-Rad Aminex HPX-87H column (HPLC organic acid profiling)",
+        "Sodium bicarbonate (buffer/CO2 source when gas sparging unavailable)",
+        "Hydrogen gas cylinder 99.9% (H2 control experiment)"
+      ],
+      "optional": [
+        "Nafion 5% solution (electrode coating for EIS measurements)",
+        "Gas-tight septa and crimp vials (headspace sampling)",
+        "LC-MS grade solvents (metabolomics)"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-005",
+    "title": "Claudin-1 overexpression reduces paracellular permeability in Caco-2 cells",
+    "domain": "gut_health",
+    "experimentType": "in_vitro",
+    "hypothesis": "Lentiviral overexpression of claudin-1 in Caco-2 cells will reduce FITC-dextran (4 kDa) paracellular flux by at least 40% compared to empty-vector controls, confirming claudin-1 as a primary determinant of intestinal barrier function.",
+    "expectedNovelty": "exact_match",
+    "demoPriority": 5,
+    "notes": "Good for demonstrating 'exact match' novelty signal. Well-studied topic.",
+    "keyParameters": {
+      "primaryEndpoint": "FITC-dextran (4 kDa) paracellular flux across Transwell monolayer (apical-to-basolateral)",
+      "minimumEffectSize": "≥40% reduction in FITC-dextran permeability coefficient (Papp) vs empty-vector control",
+      "statisticalDesign": "n=6 Transwell inserts per condition (3 independent passages), Student's t-test, p<0.05",
+      "experimentDuration": "10 weeks (lentiviral production + 21-day Caco-2 differentiation + measurements)",
+      "estimatedBudgetEur": 9800
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "Caco-2 differentiation on Transwell inserts (seed 5×10⁴ cells/insert, differentiate 21 days post-confluence)",
+        "TEER monitoring (trans-epithelial electrical resistance, Millicell ERS-2, twice per week — accept >300 Ω·cm² before assay)",
+        "FITC-dextran 4 kDa paracellular permeability assay (1 mg/mL apical, 2h incubation, basolateral sampling)",
+        "Lentiviral transduction of CLDN1 cDNA (MOI 5-10, polybrene 8 µg/mL, puromycin selection 72h post-transduction)",
+        "qPCR validation of claudin-1 overexpression (human CLDN1 primers, GAPDH normalization)"
+      ],
+      "recommended": [
+        "Western blot (claudin-1 protein, RIPA lysate from insert monolayer, anti-claudin-1 EPR7786 1:1000)",
+        "Immunofluorescence for junctional claudin-1 localization (confocal, ZO-1 co-staining for TJ marker)",
+        "ZO-1 (tight junction scaffold) staining by IF to confirm intact junctional complex",
+        "Cell proliferation assay (CellTiter-Glo) to rule out overexpression affecting growth rate"
+      ],
+      "optional": [
+        "Sodium fluorescein (376 Da) paracellular marker for small molecule flux comparison",
+        "TRITC-dextran 70 kDa (transcytosis marker, should not change with claudin-1 overexpression)",
+        "RNA-sequencing of overexpression cells (off-target transcriptional changes)",
+        "Proteasome inhibitor controls (MG132) to verify protein turnover",
+        "Rescue experiment (CLDN1 shRNA knockdown after overexpression)"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "CO2 incubator (37°C, 5% CO2, for 21-day Caco-2 differentiation)",
+        "Millicell ERS-2 TEER meter + STX01 electrode (barrier integrity monitoring)",
+        "Fluorescence plate reader (485/528 nm for FITC-dextran Papp calculation)",
+        "Biosafety cabinet class II (lentiviral work requires BSL-2)",
+        "Microcentrifuge and refrigerated centrifuge (lentiviral concentration)"
+      ],
+      "recommended": [
+        "Confocal microscope (claudin-1 and ZO-1 junctional localization)",
+        "Western blot system + ChemiDoc imager (claudin-1 protein expression)",
+        "qPCR thermocycler (CLDN1 mRNA overexpression validation)"
+      ],
+      "optional": [
+        "Ultracentrifuge (high-titer lentivirus concentration by ultracentrifugation)",
+        "Luminometer / plate reader luminescence (CellTiter-Glo growth assay)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Caco-2 cells ATCC HTB-37 (intestinal barrier model, 21-day differentiation on Transwell)",
+        "Corning Transwell polycarbonate inserts 0.4 µm pore, 24-well format",
+        "Millicell ERS-2 TEER meter (barrier integrity, must be >300 Ω·cm² before assay)",
+        "EMEM + 20% FBS (Caco-2 recommended complete medium per ATCC)",
+        "FITC-Dextran 4 kDa (paracellular tracer, 1 mg/mL apical)",
+        "Human Claudin-1 qPCR primer pair (overexpression validation)",
+        "Human GAPDH qPCR primer pair (housekeeping normalization)",
+        "Lentiviral vector encoding human CLDN1 cDNA (Addgene or custom, with puromycin selection marker)",
+        "Polybrene (transduction efficiency enhancer, 8 µg/mL)",
+        "Puromycin (selection antibiotic for stably transduced cells, 2-5 µg/mL)"
+      ],
+      "recommended": [
+        "Anti-Claudin-1 rabbit monoclonal antibody EPR7786 (WB 1:1000, IF 1:200)",
+        "RIPA lysis buffer + Halt Protease Inhibitor (protein extraction)",
+        "NuPAGE 4-12% Bis-Tris gels + ECL substrate (WB)",
+        "Goat anti-rabbit Alexa Fluor 488 secondary (IF confocal)",
+        "ZO-1 antibody (tight junction scaffold marker for IF)",
+        "PBS pH 7.4 (all washing steps)"
+      ],
+      "optional": [
+        "Sodium fluorescein (small-molecule flux control)",
+        "TRITC-dextran 70 kDa (transcytosis marker control)",
+        "CellTiter-Glo (proliferation rate control)",
+        "shRNA claudin-1 construct (knockdown rescue experiment)"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-006",
+    "title": "High-dose probiotic cocktail reduces LPS-induced systemic inflammation in mice",
+    "domain": "gut_health",
+    "experimentType": "in_vivo",
+    "hypothesis": "A 4-strain probiotic cocktail (LGG, L. acidophilus, B. longum, B. breve) dosed daily for 3 weeks prior to LPS challenge will reduce serum IL-6 by at least 50% and TNF-alpha by 40% compared to LPS-challenged controls, via gut-barrier-mediated endotoxin neutralization.",
+    "expectedNovelty": "novel",
+    "demoPriority": 6,
+    "notes": "Good for demonstrating 'novel' signal - specific 4-strain combination less studied.",
+    "keyParameters": {
+      "primaryEndpoint": "Serum IL-6 (pg/mL) at 6h post-LPS challenge",
+      "minimumEffectSize": "≥50% reduction in IL-6 vs LPS-only control; ≥40% reduction in TNF-alpha",
+      "statisticalDesign": "4 groups (naive, LPS-only, probiotic-only, probiotic+LPS), n=10 per group, one-way ANOVA + Tukey",
+      "experimentDuration": "10 weeks (3 weeks probiotic + LPS challenge + analysis)",
+      "estimatedBudgetEur": 22000
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "Daily gavage of 4-strain cocktail (LGG + L. acidophilus + B. longum + B. breve, 2.5×10⁸ CFU each, total 1×10⁹/day) for 21 days",
+        "IP LPS challenge at day 21 (E. coli O111:B4, 5 mg/kg body weight in sterile PBS)",
+        "Serum collection at 6h post-LPS (cardiac puncture under terminal anaesthesia)",
+        "Mouse IL-6 ELISA (serum, primary endpoint, LLOQ 4 pg/mL)",
+        "Mouse TNF-alpha ELISA (serum, co-primary endpoint)",
+        "FITC-dextran permeability assay at day 21 pre-challenge (intestinal barrier baseline)"
+      ],
+      "recommended": [
+        "CFU plating on selective media to verify each strain viability in daily gavage preparation",
+        "Intestinal FITC-dextran permeability (to confirm barrier improvement as mechanism)",
+        "qPCR for intestinal claudin-1 and occludin mRNA (tight junction expression)",
+        "Serum LPS-binding protein (LBP) ELISA (endotoxin translocation marker)",
+        "Body weight and clinical score monitoring throughout (welfare and efficacy tracking)"
+      ],
+      "optional": [
+        "16S rRNA microbiome sequencing (caecal content day 0, 14, 21 — does the cocktail engraft?)",
+        "Serum IFN-gamma and IL-10 (Th1/regulatory cytokine balance)",
+        "Colon histology H&E (mucus layer integrity, goblet cell number)",
+        "Mouse MCP-1/CCL2 ELISA (monocyte recruitment marker)",
+        "Faecal calprotectin (intestinal inflammation marker, non-invasive time-course)"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "Anaerobic workstation (Bifidobacterium cultures — strictly anaerobic)",
+        "Microplate reader (fluorescence for FITC-dextran, absorbance for ELISA)",
+        "Biosafety cabinet class II (LPS handling — endotoxin precautions)",
+        "Centrifuge (serum separation 2000 × g, 15 min)",
+        "Gavage needles 20G and 22G (daily dosing)",
+        "Colony counter (CFU plates)"
+      ],
+      "recommended": [
+        "qPCR thermocycler (claudin-1, occludin mRNA expression)",
+        "Tissue homogenizer (intestinal tissue lysis for RNA/protein)",
+        "Histology equipment (cryostat or paraffin embedder + microtome)"
+      ],
+      "optional": [
+        "Illumina MiSeq or outsourced 16S sequencing",
+        "Flow cytometer (peripheral blood lymphocyte subset analysis)",
+        "Confocal microscope (immunofluorescence histology)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Lactobacillus rhamnosus GG ATCC 53103 (Strain 1 of cocktail)",
+        "Lactobacillus acidophilus ATCC 4356 (Strain 2 of cocktail)",
+        "Bifidobacterium longum ATCC 15707 (Strain 3 of cocktail)",
+        "Bifidobacterium breve ATCC 15700 (Strain 4 of cocktail)",
+        "LPS from E. coli O111:B4 (systemic inflammatory challenge, 5 mg/kg IP)",
+        "C57BL/6J mice, male, 8-10 weeks (≥13 per group accounting for attrition)",
+        "MRS Broth (Lactobacillus culture medium)",
+        "Mouse IL-6 ELISA kit (primary endpoint, LLOQ 4 pg/mL)",
+        "Mouse TNF-alpha ELISA kit (co-primary endpoint)",
+        "FITC-Dextran 4 kDa (barrier function pre-challenge)",
+        "Sterile gavage needles 20G (daily dosing)"
+      ],
+      "recommended": [
+        "MRS Agar plates (CFU verification of each strain daily)",
+        "PBS pH 7.4 (vehicle for probiotic suspension and LPS injection)",
+        "RNeasy Mini Kit + iScript + SYBR Green (qPCR for tight junction genes)",
+        "Mouse Claudin-1 + GAPDH qPCR primers",
+        "RIPA buffer + protease inhibitor (protein extraction if WB included)",
+        "Micro blood collection tubes EDTA (cardiac puncture serum)",
+        "Rodent standard chow 2018S"
+      ],
+      "optional": [
+        "ZymoBIOMICS DNA Miniprep Kit (16S microbiome stool samples)",
+        "Mouse IFN-gamma ELISA kit",
+        "Mouse IL-10 ELISA kit",
+        "H&E staining kit (intestinal histology)",
+        "10% neutral buffered formalin (tissue fixation)"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-007",
+    "title": "Microfluidic antibody capture improves CRP detection speed to 5 minutes",
+    "domain": "diagnostics",
+    "experimentType": "electrochemical",
+    "hypothesis": "Integrating a microfluidic channel with 3D-printed laminar flow into a paper-based CRP biosensor will reduce sample-to-result time from 10 to 5 minutes while maintaining a LOD below 0.5 mg/L, by concentrating analyte at the electrode surface.",
+    "expectedNovelty": "novel",
+    "demoPriority": 7,
+    "notes": "Stretch hypothesis showing novelty detection works for genuinely novel ideas.",
+    "keyParameters": {
+      "primaryEndpoint": "Sample-to-result time (minutes) at LOD ≤ 0.5 mg/L",
+      "minimumEffectSize": "Time reduced from 10 min to ≤ 5 min at maintained LOD ≤ 0.5 mg/L vs non-microfluidic control",
+      "statisticalDesign": "LOD = blank + 3σ (n=10), time-to-result for amperometric plateau across n=8 sensors",
+      "experimentDuration": "12 weeks (chip design + PDMS fabrication + biosensor integration + validation)",
+      "estimatedBudgetEur": 12500
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "PDMS microfluidic chip fabrication (SU-8 or 3D-printed mold, Sylgard 184 10:1 ratio, cure 1h at 70°C)",
+        "Plasma treatment for PDMS-glass/paper bonding (O2 plasma, 30W, 60s)",
+        "SPE functionalization with EDC/NHS + anti-CRP antibody (as per HYPO-003 baseline)",
+        "Syringe-pump or capillary-driven flow characterization (flow rate optimization for 5 min assay)",
+        "Amperometric current response at optimized flow rate (chronoamperometry, -0.2 V vs Ag/AgCl)",
+        "LOD calculation in spiked whole blood (blank + 3σ, n=10 per concentration)",
+        "Head-to-head comparison vs static incubation 10 min (non-microfluidic control)"
+      ],
+      "recommended": [
+        "Microfluidic channel dimension optimization by COMSOL simulation (Reynolds number, analyte residence time)",
+        "FITC-dextran flow visualization (fluorescence microscopy, confirm laminar flow profile)",
+        "EIS characterization of microfluidic-integrated electrode (ferri/ferrocyanide probe)",
+        "Non-specific binding test in microfluidic format (1% BSA, 10% whole blood matrix)"
+      ],
+      "optional": [
+        "3D-printed integrated potentiostat housing (point-of-care integration proof-of-concept)",
+        "Pressure-driven vs electro-osmotic flow comparison",
+        "Multiplexed CRP + troponin dual-analyte chip design",
+        "Clinical sample validation (certified clinical residual sera, n=20)"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "Potentiostat with EIS capability (Biologic SP-50 or PalmSens4)",
+        "Plasma cleaner (O2 plasma bonding of PDMS to electrode substrate)",
+        "Syringe pump (controlled flow rate 1–20 µL/min for 5 min assay optimization)",
+        "Biosafety cabinet (blood sample handling)",
+        "Stereomicroscope or optical microscope (chip alignment and bonding inspection)"
+      ],
+      "recommended": [
+        "Fluorescence microscope (FITC-dextran flow visualization for channel characterization)",
+        "SEM (electrode surface after microfluidic integration)",
+        "3D printer with resin (rapid mold prototyping — SLA resin at 50 µm resolution)"
+      ],
+      "optional": [
+        "Soft-lithography spin coater + SU-8 photoresist kit (high-resolution mold fabrication)",
+        "COMSOL Multiphysics simulation license (flow and mass transport modelling)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "PDMS Sylgard 184 kit (microfluidic chip material, 10:1 base:curing agent)",
+        "Screen-printed carbon electrode strips (biosensor working electrode)",
+        "Anti-CRP monoclonal antibody (surface functionalization, same as HYPO-003)",
+        "EDC + NHS (antibody coupling chemistry)",
+        "BSA 1% (non-specific blocking)",
+        "Human CRP recombinant protein (calibration standards 0.01–10 mg/L)",
+        "Potassium ferricyanide + ferrocyanide (EIS redox probe)",
+        "Pooled human EDTA whole blood (matrix validation)",
+        "Syringe pump and PTFE tubing (flow control)"
+      ],
+      "recommended": [
+        "Gold nanoparticles 20 nm (signal amplification at short assay time)",
+        "PBS + KCl (electrolyte and wash buffer)",
+        "Ferrocene methanol (electrochemical reference calibration)",
+        "Ultrapure water (buffer preparation)"
+      ],
+      "optional": [
+        "SU-8 photoresist 2050 (alternative lithographic mold for <50 µm channels)",
+        "Trichloro(1H,1H,2H,2H-perfluorooctyl)silane (mold release agent for PDMS casting)"
+      ]
+    }
+  },
+  {
+    "id": "HYPO-008",
+    "title": "Succinic acid as co-product in Sporomusa BES system",
+    "domain": "climate",
+    "experimentType": "microbial",
+    "hypothesis": "Modifying the catholyte pH from 7.0 to 5.5 in a Sporomusa ovata bioelectrochemical system will shift the product distribution from acetate (dominant at pH 7) to include succinate at >20% molar yield, exploiting the pH-dependent fumarate reductase pathway.",
+    "expectedNovelty": "novel",
+    "demoPriority": 8,
+    "notes": "Advanced climate hypothesis. Less studied. Good for 'novel' signal demonstration.",
+    "keyParameters": {
+      "primaryEndpoint": "Succinate molar yield (%) as fraction of total organic acid products at pH 5.5 vs pH 7.0",
+      "minimumEffectSize": ">20% succinate molar yield at pH 5.5 vs <5% at pH 7.0",
+      "statisticalDesign": "n=3 BES reactors per pH condition, HPLC product quantification at 48h intervals, two-way ANOVA",
+      "experimentDuration": "12 weeks (BES setup + pH screening + steady-state operation)",
+      "estimatedBudgetEur": 18500
+    },
+    "requiredMethods": {
+      "indispensable": [
+        "pH-controlled BES operation at two conditions (pH 5.5 and pH 7.0, automatic pH-stat or manual adjustment)",
+        "HPLC organic acid profiling for acetate, succinate, and formate (Aminex HPX-87H, 5 mM H2SO4, 0.6 mL/min, 35°C, RI detector)",
+        "Succinate and acetate external calibration curves (0.1–50 mM standards in mobile phase)",
+        "Chronoamperometry at -400 mV vs SHE (consistent cathode potential across both pH conditions)",
+        "CO2 sparging (continuous, 20 mL/min) to maintain carbon source availability at both pH values",
+        "Coulombic efficiency calculation (moles total product / moles electrons passed)"
+      ],
+      "recommended": [
+        "pH-stat system (titration pump for automated pH control) or pH-feedback potentiostat",
+        "Fumarate addition control experiment (exogenous fumarate at 10 mM to verify fumarate reductase pathway)",
+        "16S rRNA qPCR on catholyte samples (Sporomusa viability across pH conditions)",
+        "SEM of biocathode at end-point (biofilm integrity at acidic pH)"
+      ],
+      "optional": [
+        "Transcriptomic analysis of Sporomusa at pH 5.5 vs 7.0 (fumarate reductase gene expression)",
+        "GC headspace analysis (CO2 consumption rate by mass balance)",
+        "LC-MS metabolomics (minor pathway products)",
+        "Adaptive laboratory evolution (serial passage at pH 5.5 to select for succinate producers)",
+        "In silico flux balance analysis (genome-scale metabolic model of Sporomusa)"
+      ]
+    },
+    "requiredEquipment": {
+      "indispensable": [
+        "Potentiostat / galvanostat with EIS module (Biologic SP-50 or equivalent)",
+        "Anaerobic glovebox (O2 < 1 ppm — pH 5.5 is particularly stressful, strict anaerobiosis critical)",
+        "H-cell BES reactor (borosilicate glass, Nafion 117 membrane separated)",
+        "HPLC system with Aminex HPX-87H + RI detector (organic acid profiling)",
+        "pH meter with electrode (catholyte monitoring)",
+        "CO2 sparging system (mass flow controller, pH-independent carbon source)"
+      ],
+      "recommended": [
+        "pH-stat controller (automated titrant addition to maintain target pH)",
+        "Autoclave (sterilize all media and glassware)",
+        "SEM (biocathode biofilm integrity at acidic pH)",
+        "qPCR thermocycler (Sporomusa 16S viability)"
+      ],
+      "optional": [
+        "GC-MS (headspace CO2/H2 quantification)",
+        "Illumina sequencing service (RNA-seq or metagenomics)",
+        "COMSOL or MATLAB (mass transfer modelling at different pH)"
+      ]
+    },
+    "requiredReagentCategories": {
+      "indispensable": [
+        "Sporomusa ovata DSM 2662 (DSMZ — strictly anaerobic acetogen with fumarate reductase activity)",
+        "Bio-Rad Aminex HPX-87H HPLC column (organic acid profiling — required for succinate vs acetate distinction)",
+        "Succinic acid disodium salt (HPLC calibration standard, 0.1–50 mM)",
+        "Acetic acid / sodium acetate (HPLC calibration standard)",
+        "Carbon cloth electrode AvCarb P50 + titanium wire + Ag/AgCl reference + Pt counter",
+        "Nafion 117 PEM (pre-treated)",
+        "CO2 gas cylinder 99.9% (primary carbon source)",
+        "pH buffer components (citrate-phosphate or MES for pH 5.5, HEPES for pH 7.0)",
+        "Megazyme Acetic Acid Assay Kit (complementary enzymatic check of acetate)"
+      ],
+      "recommended": [
+        "Fumaric acid sodium salt (exogenous substrate for pathway verification control)",
+        "Resazurin and indigo carmine (anaerobic medium quality indicators)",
+        "Sodium bicarbonate NaHCO3 (supplemental CO2 source when sparging disrupts pH control)",
+        "Mineral salts for BES medium (NH4Cl, K2HPO4, MgSO4, CaCl2, trace element solution)",
+        "Hydrogen gas 99.9% (H2 control experiment at both pH values)"
+      ],
+      "optional": [
+        "RNA extraction kit (transcriptomics for fumarate reductase gene expression)",
+        "Species-specific qPCR primers for Sporomusa (biomass quantification)",
+        "LC-MS grade acetonitrile and formic acid (metabolomics mobile phase)"
+      ]
+    }
+  }
+]

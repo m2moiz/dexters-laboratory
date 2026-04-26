@@ -1,8 +1,11 @@
 import { create } from "zustand";
 
+import { fetchPlanFromBackend } from "./backend-adapter";
 import { samplePlan, type ExperimentPlan, type DexterScreen, type Paper } from "./mock-plan";
 
 export type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string; correction?: string };
+
+export type PlanFetchStatus = "idle" | "loading" | "success" | "error";
 
 type DexterState = {
   currentScreen: DexterScreen;
@@ -13,6 +16,9 @@ type DexterState = {
   bookmarkedNodeIds: Set<string>;
   reportHighlights: ReportHighlight[];
   activeReference: string | null;
+  planFetchStatus: PlanFetchStatus;
+  apiError: string | null;
+  apiBaseUrl: string;
   setCurrentScreen: (screen: DexterScreen) => void;
   goToPreviousScreen: () => void;
   setHypothesis: (hypothesis: string) => void;
@@ -22,6 +28,8 @@ type DexterState = {
   setReportHighlights: (updater: ReportHighlight[] | ((current: ReportHighlight[]) => ReportHighlight[])) => void;
   setActiveReference: (paperId: string | null) => void;
   beginPlanGeneration: () => void;
+  fetchPlan: (hypothesis: string) => Promise<void>;
+  resetPlanFetch: () => void;
 };
 
 const previousScreen: Partial<Record<DexterScreen, DexterScreen>> = {
@@ -30,7 +38,10 @@ const previousScreen: Partial<Record<DexterScreen, DexterScreen>> = {
   PLAN_VIEW: "LITERATURE_GRAPH",
 };
 
-export const useDexterStore = create<DexterState>((set) => ({
+const DEFAULT_API_BASE_URL =
+  (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? "https://ai-scientist-ruddy.vercel.app";
+
+export const useDexterStore = create<DexterState>((set, get) => ({
   currentScreen: "LOADING",
   hypothesis: samplePlan.hypothesis,
   plan: samplePlan,
@@ -39,6 +50,9 @@ export const useDexterStore = create<DexterState>((set) => ({
   bookmarkedNodeIds: new Set(),
   reportHighlights: [],
   activeReference: null,
+  planFetchStatus: "idle",
+  apiError: null,
+  apiBaseUrl: DEFAULT_API_BASE_URL,
   setCurrentScreen: (currentScreen) => set({ currentScreen }),
   goToPreviousScreen: () =>
     set((state) => ({
@@ -68,4 +82,17 @@ export const useDexterStore = create<DexterState>((set) => ({
     set({
       currentScreen: "PLAN_GENERATING",
     }),
+  fetchPlan: async (hypothesis) => {
+    set({ planFetchStatus: "loading", apiError: null });
+    try {
+      const plan = await fetchPlanFromBackend(hypothesis, get().apiBaseUrl);
+      set({ plan, planFetchStatus: "success" });
+    } catch (error) {
+      set({
+        planFetchStatus: "error",
+        apiError: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  },
+  resetPlanFetch: () => set({ planFetchStatus: "idle", apiError: null }),
 }));
