@@ -29,7 +29,8 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
-const graphNodeRadius = (influence: number) => 16 + influence * 15;
+const graphLayoutScale = 0.58;
+const graphNodeRadius = (influence: number) => 24 + influence * 26;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
@@ -197,8 +198,8 @@ function LiteratureGraphScreen() {
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
         phase: indexFromPaperId(paper.id) * 1.37,
-        x: paper.x,
-        y: paper.y,
+        x: paper.x * graphLayoutScale,
+        y: paper.y * graphLayoutScale,
       })),
       links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
     }),
@@ -319,11 +320,11 @@ function LiteratureGraphScreen() {
         "link",
         forceLink<ForceNode, ForceLink>(linksRef.current)
           .id((node) => node.id)
-          .distance((link) => 210 - link.weight * 95)
-          .strength((link) => 0.06 + link.weight * 0.22),
+          .distance((link) => 132 - link.weight * 52)
+          .strength((link) => 0.1 + link.weight * 0.28),
       )
-      .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
-      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(0.82))
+      .force("charge", forceManyBody<ForceNode>().strength((node) => -145 - node.influence * 115))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 12).strength(0.78))
       .force("center", forceCenter(0, 0))
       .alpha(1)
       .alphaDecay(0.0016)
@@ -365,7 +366,7 @@ function LiteratureGraphScreen() {
           const orbit = Math.atan2(y, x) + Math.PI / 2;
           const orbitalForce = 0.024 + node.influence * 0.014;
           const waveForce = 0.026;
-          const centerPull = Math.min(distance, 420) * 0.00012;
+          const centerPull = Math.min(distance, 360) * 0.00024;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
@@ -382,7 +383,7 @@ function LiteratureGraphScreen() {
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
           const pressure = hovered.hoverCharge ?? 0;
-          const radius = 300 + pressure * 260;
+          const radius = 220 + pressure * 180;
           const falloff = Math.max(0, 1 - distance / radius);
           const influence = falloff * falloff * (0.18 + pressure * 1.45);
           node.vx = (node.vx ?? 0) + (dx / distance) * influence * 2.35;
