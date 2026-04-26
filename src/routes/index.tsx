@@ -912,7 +912,7 @@ function PlanViewScreen() {
           >
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
-            <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
+            <p className={cn("mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground", highlightedIds.has("hypothesis") && "dexter-report-selected", activeIds.has("hypothesis") && "dexter-report-active")} data-report-id="hypothesis">
               {hypothesis}
             </p>
             {plan.sections.map((section, sectionIndex) => (
