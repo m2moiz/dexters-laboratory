@@ -584,6 +584,17 @@ function PaperDetailOverlay({
         <article className="relative w-full max-w-2xl border-2 border-industrial bg-card p-7 dexter-shadow animate-in fade-in zoom-in-95 duration-200">
           <button
             type="button"
+            onClick={() => onToggleBookmark(paper.id)}
+            aria-label={bookmarked ? "Remove bookmark" : "Bookmark paper"}
+            className={cn(
+              "absolute right-24 top-5 flex h-9 w-9 items-center justify-center border-2 border-industrial bg-background transition-transform hover:-translate-y-0.5",
+              bookmarked && "bg-primary text-primary-foreground",
+            )}
+          >
+            <Bookmark size={17} fill={bookmarked ? "currentColor" : "none"} strokeWidth={2.5} />
+          </button>
+          <button
+            type="button"
             onClick={onClose}
             className="absolute right-5 top-5 border-2 border-industrial bg-background px-3 py-1 font-mono text-xs font-bold uppercase transition-transform hover:-translate-y-0.5"
           >
@@ -598,7 +609,7 @@ function PaperDetailOverlay({
           <div className="mt-7 grid grid-cols-3 gap-3 font-mono text-xs font-bold uppercase">
             <div className="border-2 border-industrial bg-secondary p-3">Influence<br />{Math.round(paper.influence * 100)}%</div>
             <div className="border-2 border-industrial bg-secondary p-3">Status<br />Reviewed</div>
-            <div className="border-2 border-industrial bg-secondary p-3">Action<br />Pinned</div>
+            <div className="border-2 border-industrial bg-secondary p-3">Action<br />{bookmarked ? "Bookmarked" : "Open"}</div>
           </div>
         </article>
       )}
