@@ -761,18 +761,16 @@ function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(() => new Set());
+  const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
   const [activeReference, setActiveReference] = useState<string | null>(null);
-  const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; startX: number; startY: number; x: number; y: number }>({
+  const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
     active: false,
     drawing: false,
-    startX: 0,
-    startY: 0,
-    x: 0,
-    y: 0,
+    points: [],
   });
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const reportRef = useRef<HTMLDivElement | null>(null);
@@ -806,7 +804,8 @@ function PlanViewScreen() {
     const element = range?.commonAncestorContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
     const id = element?.dataset.reportId;
     if (!id) return;
-    setSelectedIds(new Set([id]));
+    setActiveIds(new Set([id]));
+    setHighlightedIds((current) => new Set(current).add(id));
     setSelectedText(text);
     selection?.removeAllRanges();
   };
@@ -817,21 +816,36 @@ function PlanViewScreen() {
     if (!reportElement && !selectedText) return;
     event.preventDefault();
     const id = reportElement?.dataset.reportId;
-    if (id && !selectedIds.has(id)) {
-      setSelectedIds(new Set([id]));
+    if (id && !activeIds.has(id)) {
+      setActiveIds(new Set([id]));
       setSelectedText(reportElement.innerText.trim());
     }
-    setContextMenu({ x: event.clientX, y: event.clientY });
+    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null });
     setPromptBox(null);
   };
 
   const goToReference = () => {
-    const id = [...selectedIds][0];
+    const id = [...activeIds][0];
     if (!id) return;
     const paper = referenceFor(id);
     setActiveReference(paper.id);
     setContextMenu(null);
     document.getElementById(`reference-${paper.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const undoHighlight = () => {
+    if (!contextMenu?.targetId) return;
+    setHighlightedIds((current) => {
+      const next = new Set(current);
+      next.delete(contextMenu.targetId as string);
+      return next;
+    });
+    setActiveIds((current) => {
+      const next = new Set(current);
+      next.delete(contextMenu.targetId as string);
+      return next;
+    });
+    setContextMenu(null);
   };
 
   const startPrompt = (action: string) => {
