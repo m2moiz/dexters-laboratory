@@ -331,30 +331,40 @@
 }
 
 @keyframes dexter-sign-power {
-  0%, 18%, 31% { background-color: var(--card); }
-  19%, 26%, 32%, 100% { background-color: color-mix(in oklab, var(--primary) 9%, var(--card)); }
+  0%, 12%, 23%, 38% { background-color: var(--card); }
+  13%, 18%, 24%, 31%, 39%, 100% { background-color: color-mix(in oklab, var(--primary) 10%, var(--card)); }
 }
 
 @keyframes dexter-letter-glow {
-  0%, 18%, 31% {
+  0%, 12%, 23%, 38% {
     color: color-mix(in oklab, var(--primary) 58%, var(--industrial));
-    text-shadow: none;
+    text-shadow: 3px 3px 0 var(--industrial);
   }
-  19%, 26% {
+  13%, 18%, 24%, 31% {
     color: color-mix(in oklab, var(--primary) 72%, var(--card));
-    text-shadow: 0 0 10px color-mix(in oklab, var(--primary) 46%, transparent);
+    text-shadow:
+      3px 3px 0 var(--industrial),
+      0 0 10px color-mix(in oklab, var(--primary) 46%, transparent);
   }
-  32%, 100% {
+  39%, 100% {
     color: var(--primary);
     text-shadow:
+      3px 3px 0 var(--industrial),
       0 0 8px color-mix(in oklab, var(--primary) 44%, transparent),
       0 0 20px color-mix(in oklab, var(--primary) 24%, transparent);
   }
 }
 
+@keyframes dexter-sign-slam {
+  0% { opacity: 0; transform: translateY(-42px) scaleY(0.2); }
+  58% { opacity: 1; transform: translateY(5px) scaleY(1.08); }
+  76% { transform: translateY(-2px) scaleY(0.96); }
+  100% { opacity: 1; transform: translateY(0) scaleY(1); }
+}
+
 @keyframes dexter-spark-jump {
   0% { opacity: 0; transform: translate(0, 0) scale(0.2) rotate(0deg); }
-  18% { opacity: 1; transform: translate(7px, -7px) scale(1) rotate(16deg); box-shadow: 0 0 18px color-mix(in oklab, var(--accent) 72%, transparent); }
-  42% { opacity: 1; transform: translate(-5px, 5px) scale(0.75) rotate(42deg); }
-  100% { opacity: 0; transform: translate(16px, -16px) scale(0.12) rotate(72deg); }
+  22% { opacity: 1; transform: translate(10px, -10px) scale(1.25) rotate(22deg); box-shadow: 0 0 22px color-mix(in oklab, var(--accent) 78%, transparent); }
+  46% { opacity: 1; transform: translate(-7px, 7px) scale(0.8) rotate(55deg); }
+  100% { opacity: 0; transform: translate(18px, -18px) scale(0.12) rotate(92deg); }
 }
