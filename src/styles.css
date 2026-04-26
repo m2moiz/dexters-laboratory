@@ -192,4 +192,95 @@
   .dexter-flow .react-flow__edge.animated path {
     animation-duration: 1.2s;
   }
+
+  .bg-industrial {
+    background-color: var(--industrial);
+  }
+
+  .dexter-lab-grid {
+    background-image:
+      linear-gradient(color-mix(in oklab, var(--industrial) 12%, transparent) 1px, transparent 1px),
+      linear-gradient(90deg, color-mix(in oklab, var(--industrial) 12%, transparent) 1px, transparent 1px);
+    background-size: 34px 34px;
+    animation: dexter-grid-wake 900ms ease-out both;
+  }
+
+  .dexter-door-left {
+    animation: dexter-door-left 1450ms cubic-bezier(0.76, 0, 0.24, 1) 620ms both;
+  }
+
+  .dexter-door-right {
+    animation: dexter-door-right 1450ms cubic-bezier(0.76, 0, 0.24, 1) 620ms both;
+  }
+
+  .dexter-title-reveal {
+    animation: dexter-title-reveal 900ms cubic-bezier(0.22, 1, 0.36, 1) 1500ms both;
+  }
+
+  .dexter-panel-slide-left {
+    animation: dexter-panel-left 900ms cubic-bezier(0.22, 1, 0.36, 1) 1350ms both;
+  }
+
+  .dexter-panel-slide-right {
+    animation: dexter-panel-right 900ms cubic-bezier(0.22, 1, 0.36, 1) 1500ms both;
+  }
+
+  .dexter-lab-blink {
+    animation: dexter-lab-blink 680ms steps(2, jump-none) infinite;
+  }
+
+  .dexter-instrument-pulse {
+    animation: dexter-instrument-pulse 1300ms ease-in-out 1700ms infinite;
+  }
+
+  .dexter-scan-field {
+    background: linear-gradient(180deg, transparent, color-mix(in oklab, var(--primary) 40%, transparent), transparent);
+    background-size: 100% 220%;
+    animation: dexter-scan 1100ms linear infinite;
+  }
+}
+
+@keyframes dexter-grid-wake {
+  from { opacity: 0; transform: scale(1.02); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes dexter-door-left {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-104%); }
+}
+
+@keyframes dexter-door-right {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(104%); }
+}
+
+@keyframes dexter-title-reveal {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes dexter-panel-left {
+  from { opacity: 0; transform: translateX(-28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dexter-panel-right {
+  from { opacity: 0; transform: translateX(28px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes dexter-lab-blink {
+  0%, 48% { opacity: 0.35; }
+  49%, 100% { opacity: 1; }
+}
+
+@keyframes dexter-instrument-pulse {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+@keyframes dexter-scan {
+  from { background-position: 0 0; }
+  to { background-position: 0 220%; }
 }
