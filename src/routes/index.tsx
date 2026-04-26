@@ -393,14 +393,16 @@ function LiteratureGraphScreen() {
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
           const pressure = hovered.hoverCharge ?? 0;
-          const radius = 220 + pressure * 180;
+          const safeDistance = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + graphNodeRadius(hovered.influence) * (hovered.hoverScale ?? 1) + 28;
+          const radius = safeDistance + 170 + pressure * 230;
+          const overlapPressure = Math.max(0, safeDistance - distance) / safeDistance;
           const falloff = Math.max(0, 1 - distance / radius);
-          const influence = falloff * falloff * (0.18 + pressure * 1.45);
-          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 2.35;
-          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 2.35;
+          const influence = overlapPressure * 5.6 + falloff * falloff * (0.45 + pressure * 2.6);
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 3.2;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 3.2;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.34 : 0.16)).tick(2);
       const padding = Math.max(34, Math.min(graphSize.width, graphSize.height) * 0.055);
       const nodeExtents = nodes.map((node) => {
         const visualRadius = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + (bookmarkedNodeIds.has(node.id) ? 24 : 14);
