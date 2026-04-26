@@ -1,62 +1,37 @@
-Yes — I understand. You want the generated plan/report to stop feeling like stacked UI blocks and instead read like a real document: flowing report text, warm paper-like styling, selectable passages, and an editor-style contextual menu for references and targeted rewrite instructions.
+I’ll update the report interaction so text selection behaves like a real annotation layer instead of disappearing after mouse-up, and I’ll replace the rectangle lasso with a hand-drawn freeform selection experience.
 
 Plan:
 
-1. Redesign the report view as a warm, readable document
-   - Replace the current block/card layout in the generated report page with a single report-paper surface.
-   - Keep the current app font system, but use it more like a polished research report: title, abstract/hypothesis, section headings, body paragraphs, citations, and margin notes.
-   - Use the existing warm cream/card theme with subtle teal/industrial accents, avoiding heavy boxed sections.
+1. Make dragged text highlights persist
+   - When the user drags across report text, store that selection as a persistent highlight/annotation.
+   - Keep the selected passage visibly marked after mouse-up instead of clearing the browser selection with no lasting state.
+   - Preserve the current squiggly/hand-marked feel, but make it more intentional: warm translucent highlight first, with a rough wavy underline/marker treatment so it feels hand-annotated.
 
-2. Make report text interactively selectable
-   - Render each sentence/paragraph as selectable text instead of isolated cards.
-   - Track selected text and its location in the report.
-   - When text is selected, apply an initial highlight while selecting, then convert the selected passage into a squiggly underline treatment so it feels like an annotated manuscript.
+2. Add “Undo highlight” to the right-click menu
+   - If the user right-clicks an already-highlighted passage, show an “Undo highlight” option.
+   - Selecting it removes that annotation only, without disturbing other highlights.
+   - Keep the existing actions such as “Go to reference,” “Suggest rewrite,” and “Make more rigorous.”
 
-3. Add a custom right-click/context menu
-   - On right-click over report text or an existing selection, open a themed contextual menu.
-   - Include actions such as:
-     - “Go to reference”
-     - “Suggest rewrite”
-     - “Clarify this”
-     - “Make more rigorous”
-     - “Add caveat”
-     - “Lasso select region”
-   - The menu will match the Dexter theme rather than using the browser’s default menu.
+3. Replace rectangle lasso with a true freehand lasso
+   - Change the lasso mode from drawing a rectangular box to drawing a freeform path that follows the pointer.
+   - Render the path as a sketchy, dashed, slightly imperfect line, matching a rough Excalidraw-style annotation vibe.
+   - While drawing, show a subtle warm fill inside/around the selection path and a small “lasso active” cursor/label so it feels deliberate.
 
-4. Connect “Go to reference” to the literature/source area
-   - Associate report sentences with the available mock papers/citations.
-   - Clicking “Go to reference” will scroll/highlight the citation or open a small reference panel showing the relevant paper/source.
-   - For now, this will be modeled from the existing mock literature data; later it can connect to real generated citations when the backend exists.
+4. Use freehand lasso selection logic
+   - Track the lasso path points while dragging.
+   - On release, determine which report paragraphs/passages intersect or sit inside the drawn shape.
+   - Mark those selected passages with the same persistent highlight treatment used for dragged text.
 
-5. Add guided edit prompts for selected text
-   - After choosing an edit action, show a small prompt box near the selection.
-   - The selected passage will be quoted/contextualized, and the user can type a guided instruction like “make this more cautious” or “add comparison to trehalose literature.”
-   - Since the app currently uses mock data, this will initially capture/display the requested edit rather than calling a real LLM.
-
-6. Add a lasso selection mode
-   - Add a “lasso select region” mode from the context menu.
-   - While active, the cursor can drag over a rectangular/freeform region of the report.
-   - Text intersecting that region will become part of a bulk selection, then the same guided prompt menu can be used for that region.
+5. Refine the animation and visual style
+   - Add a natural “ink settling” animation when highlights are created.
+   - Add a hand-drawn lasso stroke animation, as if the line is being drawn in real time.
+   - Use the current warm paper palette, teal/primary accent, and amber glow sparingly so the result feels cohesive with the Dexter lab theme while moving toward the rough-but-nice Excalidraw feel.
 
 Technical details:
 
-- Main changes will be in `src/routes/index.tsx` and `src/styles.css`.
-- The current `PlanViewScreen`, `PlanCard`, and side list layout will be refactored into a document-style report component.
-- I’ll add local React state for:
-  - current selected text
-  - selected paragraph/sentence IDs
-  - context menu position
-  - active reference highlight
-  - active prompt/edit instruction
-  - lasso mode and lasso bounds
-- CSS will add:
-  - paper/report typography
-  - warm document background
-  - custom text selection styling
-  - squiggly underline annotation style
-  - themed context menu and prompt popover
-  - lasso overlay visuals
-
-Expected result:
-
-The report page will feel like a real generated scientific report instead of cards. Users will be able to select text, right-click for meaningful actions, jump to references, and create targeted edit prompts on individual sentences or larger lasso-selected regions.
+- Update `PlanViewScreen` in `src/routes/index.tsx` to store persistent annotations rather than only paragraph IDs.
+- Replace the current `lasso` rectangle state with freehand path state: an array of pointer coordinates, drawing status, and active mode.
+- Render the lasso using an absolutely/fixed-position SVG overlay instead of a `<div>` rectangle.
+- Add helper functions for point-in-polygon/intersection-style selection against report text block bounding boxes.
+- Update the context menu logic so it detects whether the clicked text block is already highlighted and conditionally includes “Undo highlight.”
+- Update `src/styles.css` with sketch-style highlight, rough underline, freehand lasso stroke, lasso fill, and subtle draw/settle animations.

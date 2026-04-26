@@ -46,6 +46,51 @@ const pressureColor = (pressure: number) => {
   return start.map((channel, channelIndex) => Math.round(channel + (end[channelIndex] - channel) * local));
 };
 
+type LassoPoint = { x: number; y: number };
+
+const buildFreehandPath = (points: LassoPoint[], close = false) => {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  const [first, ...rest] = points;
+  const path = rest.reduce((commands, point, index) => {
+    const previous = points[index];
+    const midX = (previous.x + point.x) / 2;
+    const midY = (previous.y + point.y) / 2;
+    return `${commands} Q ${previous.x} ${previous.y} ${midX} ${midY}`;
+  }, `M ${first.x} ${first.y}`);
+  const last = points[points.length - 1];
+  return `${path} L ${last.x} ${last.y}${close ? " Z" : ""}`;
+};
+
+const pointInPolygon = (point: LassoPoint, polygon: LassoPoint[]) => {
+  if (polygon.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const current = polygon[i];
+    const previous = polygon[j];
+    const crosses = current.y > point.y !== previous.y > point.y;
+    if (crosses) {
+      const xAtY = ((previous.x - current.x) * (point.y - current.y)) / (previous.y - current.y) + current.x;
+      if (point.x < xAtY) inside = !inside;
+    }
+  }
+  return inside;
+};
+
+const lassoTouchesRect = (points: LassoPoint[], rect: DOMRect) => {
+  const rectPoints = [
+    { x: rect.left, y: rect.top },
+    { x: rect.right, y: rect.top },
+    { x: rect.right, y: rect.bottom },
+    { x: rect.left, y: rect.bottom },
+    { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+  ];
+  return (
+    rectPoints.some((point) => pointInPolygon(point, points)) ||
+    points.some((point) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
+  );
+};
+
 type ForceNode = {
   id: string;
   paper: Paper;
@@ -714,18 +759,16 @@ function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(() => new Set());
+  const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
   const [activeReference, setActiveReference] = useState<string | null>(null);
-  const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; startX: number; startY: number; x: number; y: number }>({
+  const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
     active: false,
     drawing: false,
-    startX: 0,
-    startY: 0,
-    x: 0,
-    y: 0,
+    points: [],
   });
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const reportRef = useRef<HTMLDivElement | null>(null);
@@ -759,7 +802,8 @@ function PlanViewScreen() {
     const element = range?.commonAncestorContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
     const id = element?.dataset.reportId;
     if (!id) return;
-    setSelectedIds(new Set([id]));
+    setActiveIds(new Set([id]));
+    setHighlightedIds((current) => new Set(current).add(id));
     setSelectedText(text);
     selection?.removeAllRanges();
   };
@@ -770,21 +814,36 @@ function PlanViewScreen() {
     if (!reportElement && !selectedText) return;
     event.preventDefault();
     const id = reportElement?.dataset.reportId;
-    if (id && !selectedIds.has(id)) {
-      setSelectedIds(new Set([id]));
+    if (id && !activeIds.has(id)) {
+      setActiveIds(new Set([id]));
       setSelectedText(reportElement.innerText.trim());
     }
-    setContextMenu({ x: event.clientX, y: event.clientY });
+    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null });
     setPromptBox(null);
   };
 
   const goToReference = () => {
-    const id = [...selectedIds][0];
+    const id = [...activeIds][0];
     if (!id) return;
     const paper = referenceFor(id);
     setActiveReference(paper.id);
     setContextMenu(null);
     document.getElementById(`reference-${paper.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const undoHighlight = () => {
+    if (!contextMenu?.targetId) return;
+    setHighlightedIds((current) => {
+      const next = new Set(current);
+      next.delete(contextMenu.targetId as string);
+      return next;
+    });
+    setActiveIds((current) => {
+      const next = new Set(current);
+      next.delete(contextMenu.targetId as string);
+      return next;
+    });
+    setContextMenu(null);
   };
 
   const startPrompt = (action: string) => {
@@ -793,30 +852,31 @@ function PlanViewScreen() {
     setContextMenu(null);
   };
 
-  const lassoStyle = {
-    left: Math.min(lasso.startX, lasso.x),
-    top: Math.min(lasso.startY, lasso.y),
-    width: Math.abs(lasso.x - lasso.startX),
-    height: Math.abs(lasso.y - lasso.startY),
-  };
+  const lassoPath = buildFreehandPath(lasso.points, lasso.points.length > 2);
 
   return (
     <main
       className={cn(screenClass, "dexter-report-stage")}
       onClick={() => setContextMenu(null)}
       onPointerMove={(event) => {
-        if (lasso.drawing) setLasso((current) => ({ ...current, x: event.clientX, y: event.clientY }));
+        if (lasso.drawing) {
+          setLasso((current) => ({
+            ...current,
+            points: [...current.points, { x: event.clientX, y: event.clientY }],
+          }));
+        }
       }}
       onPointerUp={() => {
         if (!lasso.drawing) return;
-        const box = { left: Math.min(lasso.startX, lasso.x), right: Math.max(lasso.startX, lasso.x), top: Math.min(lasso.startY, lasso.y), bottom: Math.max(lasso.startY, lasso.y) };
         const picked = [...(reportRef.current?.querySelectorAll<HTMLElement>("[data-report-id]") ?? [])].filter((element) => {
           const rect = element.getBoundingClientRect();
-          return rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
+          return lassoTouchesRect(lasso.points, rect);
         });
-        setSelectedIds(new Set(picked.map((element) => element.dataset.reportId).filter(Boolean) as string[]));
+        const pickedIds = picked.map((element) => element.dataset.reportId).filter(Boolean) as string[];
+        setActiveIds(new Set(pickedIds));
+        setHighlightedIds((current) => new Set([...current, ...pickedIds]));
         setSelectedText(picked.map((element) => element.innerText.trim()).join(" "));
-        setLasso((current) => ({ ...current, active: false, drawing: false }));
+        setLasso({ active: false, drawing: false, points: [] });
       }}
     >
       <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[1fr_auto] lg:px-8">
@@ -847,12 +907,12 @@ function PlanViewScreen() {
             onPointerDown={(event) => {
               if (!lasso.active) return;
               event.preventDefault();
-              setLasso({ active: true, drawing: true, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY });
+              setLasso({ active: true, drawing: true, points: [{ x: event.clientX, y: event.clientY }] });
             }}
           >
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
-            <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
+            <p className={cn("mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground", highlightedIds.has("hypothesis") && "dexter-report-selected", activeIds.has("hypothesis") && "dexter-report-active")} data-report-id="hypothesis">
               {hypothesis}
             </p>
             {plan.sections.map((section, sectionIndex) => (
@@ -871,7 +931,7 @@ function PlanViewScreen() {
                     <p
                       key={paragraph}
                       data-report-id={itemId}
-                      className={cn("dexter-report-paragraph", selectedIds.has(itemId) && "dexter-report-selected", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
+                      className={cn("dexter-report-paragraph", highlightedIds.has(itemId) && "dexter-report-selected", activeIds.has(itemId) && "dexter-report-active", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
                     >
                       {paragraph}
                     </p>
@@ -906,6 +966,7 @@ function PlanViewScreen() {
       </div>
       {contextMenu && (
         <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
+          {contextMenu.targetId && highlightedIds.has(contextMenu.targetId) && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
           <button type="button" onClick={goToReference}>Go to reference</button>
           <button type="button" onClick={() => startPrompt("Suggest rewrite")}>Suggest rewrite</button>
           <button type="button" onClick={() => startPrompt("Clarify this")}>Clarify this</button>
@@ -922,7 +983,12 @@ function PlanViewScreen() {
           <Button className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary">Queue guided edit</Button>
         </div>
       )}
-      {lasso.drawing && <div className="dexter-lasso-box" style={lassoStyle} />}
+      {lasso.drawing && (
+        <svg className="dexter-lasso-svg" aria-hidden="true">
+          <path className="dexter-lasso-fill" d={lassoPath} />
+          <path className="dexter-lasso-stroke" d={lassoPath} />
+        </svg>
+      )}
     </main>
   );
 }
