@@ -708,6 +708,31 @@ function PaperDetailOverlay({
   );
 }
 
+function HighlightableText({ text, reportId, highlights }: { text: string; reportId: string; highlights: ReportHighlight[] }) {
+  const sortedHighlights = [...highlights]
+    .filter((highlight) => highlight.reportId === reportId)
+    .sort((a, b) => a.start - b.start);
+  if (!sortedHighlights.length) return <>{text}</>;
+
+  const nodes: React.ReactNode[] = [];
+  let cursor = 0;
+  sortedHighlights.forEach((highlight) => {
+    const start = Math.max(cursor, Math.min(highlight.start, text.length));
+    const end = Math.max(start, Math.min(highlight.end, text.length));
+    if (cursor < start) nodes.push(<span key={`${highlight.key}-before`}>{text.slice(cursor, start)}</span>);
+    if (start < end) {
+      nodes.push(
+        <mark key={highlight.key} className="dexter-report-selected" data-highlight-key={highlight.key}>
+          {text.slice(start, end)}
+        </mark>,
+      );
+    }
+    cursor = end;
+  });
+  if (cursor < text.length) nodes.push(<span key={`${reportId}-tail`}>{text.slice(cursor)}</span>);
+  return <>{nodes}</>;
+}
+
 function PlanGeneratingScreen() {
   const plan = useDexterStore((state) => state.plan);
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
