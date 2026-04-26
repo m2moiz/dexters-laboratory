@@ -33,10 +33,9 @@ const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
   const stops = [
+    [64, 151, 166],
     [27, 122, 143],
-    [234, 151, 72],
-    [210, 76, 68],
-    [157, 38, 52],
+    [18, 98, 120],
   ];
   const scaled = Math.min(stops.length - 1.001, pressure * (stops.length - 1));
   const index = Math.floor(scaled);
@@ -370,12 +369,12 @@ function LiteratureGraphScreen() {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
-          const pressure = easedPressure(hovered.hoverCharge ?? 0);
-          const radius = 270 + pressure * 210;
+          const pressure = hovered.hoverCharge ?? 0;
+          const radius = 300 + pressure * 260;
           const falloff = Math.max(0, 1 - distance / radius);
-          const influence = falloff * falloff * pressure;
-          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 1.85;
-          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 1.85;
+          const influence = falloff * falloff * (0.18 + pressure * 1.45);
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 2.35;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 2.35;
         }
       });
       simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
