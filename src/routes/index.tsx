@@ -370,19 +370,23 @@ function LiteratureGraphScreen() {
           const y = node.y ?? 0;
           const distance = Math.max(Math.hypot(x, y), 1);
           const orbit = Math.atan2(y, x) + Math.PI / 2;
+          const ringRadius = graphRingRadius(index);
           const orbitalForce = 0.024 + node.influence * 0.014;
           const waveForce = 0.026;
           const centerPull = Math.min(distance, 360) * 0.00016;
+          const radialError = distance - ringRadius;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
             Math.sin(time / 820 + node.phase + index * 1.7) * waveForce -
-            (x / distance) * centerPull;
+            (x / distance) * centerPull -
+            (x / distance) * radialError * 0.006;
           node.vy =
             (node.vy ?? 0) +
             Math.sin(orbit) * orbitalForce +
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
-            (y / distance) * centerPull;
+            (y / distance) * centerPull -
+            (y / distance) * radialError * 0.006;
         }
         if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
