@@ -32,6 +32,7 @@ const screenClass = "min-h-screen bg-background text-foreground";
 const graphLayoutScale = 0.58;
 const graphNodeRadius = (influence: number) => 24 + influence * 26;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
+const graphRingRadius = (index: number) => (index % 3 === 0 ? 86 : index % 3 === 1 ? 152 : 218) * graphLayoutScale;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
   const stops = [
@@ -193,7 +194,7 @@ function LiteratureGraphScreen() {
     () => ({
       nodes: plan.papers.map((paper, index) => {
         const angle = (index / Math.max(plan.papers.length, 1)) * Math.PI * 2 - Math.PI / 2;
-        const ring = index % 3 === 0 ? 74 : index % 3 === 1 ? 138 : 196;
+        const ring = graphRingRadius(index);
         return {
         id: paper.id,
         paper,
@@ -201,8 +202,8 @@ function LiteratureGraphScreen() {
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
         phase: indexFromPaperId(paper.id) * 1.37,
-        x: Math.cos(angle) * ring * graphLayoutScale,
-        y: Math.sin(angle) * ring * graphLayoutScale,
+        x: Math.cos(angle) * ring,
+        y: Math.sin(angle) * ring,
       };
       }),
       links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
