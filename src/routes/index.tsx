@@ -1095,11 +1095,18 @@ function PlanViewScreen() {
         </div>
       </header>
       <div className="grid grid-cols-1 gap-8 px-5 py-8 lg:grid-cols-[18%_minmax(0,1fr)_24%] lg:px-8">
-        <aside className="lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)]">
-          <p className="font-mono text-xs font-bold uppercase text-primary">Contents</p>
-          <nav className="mt-5 space-y-2">
-            {plan.sections.map((section) => (
-              <a key={section.id} href={`#${section.id}`} className={cn("block border-l-4 px-3 py-2 font-mono text-xs font-bold uppercase transition-colors", activeSection === section.id ? "border-primary bg-secondary text-foreground" : "border-transparent text-muted-foreground hover:border-primary")}>{section.title}</a>
+        <aside className="dexter-wave-shell lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)]" aria-label="Report sections">
+          <nav className="dexter-wave-launcher">
+            {plan.sections.map((section, index) => (
+              <a
+                key={section.id}
+                href={`#${section.id}`}
+                className={cn("dexter-wave-item", activeSection === section.id && "dexter-wave-item-active")}
+                style={{ "--wave-index": index } as React.CSSProperties}
+              >
+                <span className="dexter-wave-dot" />
+                <span className="dexter-wave-label">{section.title}</span>
+              </a>
             ))}
           </nav>
         </aside>
