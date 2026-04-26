@@ -524,7 +524,19 @@ function LiteratureGraphScreen() {
           Drag nodes / weighted force network / live literature topology
         </div>
         <PaperHoverCard node={selectedPaper ? null : hoveredNode} position={hoverCardPosition} />
-        <PaperDetailOverlay paper={selectedPaper} onClose={() => selectPaper(null)} />
+        <PaperDetailOverlay
+          paper={selectedPaper}
+          bookmarked={selectedPaper ? bookmarkedNodeIds.has(selectedPaper.id) : false}
+          onToggleBookmark={(paperId) =>
+            setBookmarkedNodeIds((current) => {
+              const next = new Set(current);
+              if (next.has(paperId)) next.delete(paperId);
+              else next.add(paperId);
+              return next;
+            })
+          }
+          onClose={() => selectPaper(null)}
+        />
       </section>
     </main>
   );
@@ -547,7 +559,17 @@ function PaperHoverCard({ node, position }: { node: ForceNode | null; position: 
   );
 }
 
-function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: () => void }) {
+function PaperDetailOverlay({
+  paper,
+  bookmarked,
+  onToggleBookmark,
+  onClose,
+}: {
+  paper: Paper | null;
+  bookmarked: boolean;
+  onToggleBookmark: (paperId: string) => void;
+  onClose: () => void;
+}) {
   return (
     <div
       onPointerDown={(event) => {
