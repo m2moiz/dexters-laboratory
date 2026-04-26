@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation } from "d3-force";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -29,10 +29,8 @@ export const Route = createFileRoute("/")({
 });
 
 const screenClass = "min-h-screen bg-background text-foreground";
-const graphLayoutScale = 0.58;
-const graphNodeRadius = (influence: number) => 17 + influence * 19;
+const graphNodeRadius = (influence: number) => 16 + influence * 15;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
-const graphRingRadius = (index: number) => (index % 3 === 0 ? 138 : index % 3 === 1 ? 248 : 356) * graphLayoutScale;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
   const stops = [
@@ -178,7 +176,6 @@ function LiteratureGraphScreen() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
-  const transformInitializedRef = useRef(false);
   const dragRef = useRef<ForceNode | null>(null);
   const pointerDownRef = useRef<{ node: ForceNode; x: number; y: number; didDrag: boolean } | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
@@ -193,20 +190,16 @@ function LiteratureGraphScreen() {
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
-      nodes: plan.papers.map((paper, index) => {
-        const angle = (index / Math.max(plan.papers.length, 1)) * Math.PI * 2 - Math.PI / 2;
-        const ring = graphRingRadius(index);
-        return {
+      nodes: plan.papers.map((paper) => ({
         id: paper.id,
         paper,
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
         phase: indexFromPaperId(paper.id) * 1.37,
-        x: Math.cos(angle) * ring,
-        y: Math.sin(angle) * ring,
-      };
-      }),
+        x: paper.x,
+        y: paper.y,
+      })),
       links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
     }),
     [plan.edges, plan.papers],
@@ -326,12 +319,11 @@ function LiteratureGraphScreen() {
         "link",
         forceLink<ForceNode, ForceLink>(linksRef.current)
           .id((node) => node.id)
-          .distance((link) => 238 - link.weight * 72)
-          .strength((link) => 0.06 + link.weight * 0.16),
+          .distance((link) => 210 - link.weight * 95)
+          .strength((link) => 0.06 + link.weight * 0.22),
       )
-      .force("charge", forceManyBody<ForceNode>().strength((node) => -260 - node.influence * 170))
-      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + 30).strength(1))
-      .force("radial", forceRadial<ForceNode>((node, index) => graphRingRadius(index), 0, 0).strength(0.13))
+      .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(0.82))
       .force("center", forceCenter(0, 0))
       .alpha(1)
       .alphaDecay(0.0016)
@@ -371,73 +363,50 @@ function LiteratureGraphScreen() {
           const y = node.y ?? 0;
           const distance = Math.max(Math.hypot(x, y), 1);
           const orbit = Math.atan2(y, x) + Math.PI / 2;
-          const ringRadius = graphRingRadius(index);
-          const orbitalForce = 0.01 + node.influence * 0.006;
-          const waveForce = 0.014;
-          const centerPull = Math.min(distance, 360) * 0.00016;
-          const radialError = distance - ringRadius;
+          const orbitalForce = 0.024 + node.influence * 0.014;
+          const waveForce = 0.026;
+          const centerPull = Math.min(distance, 420) * 0.00012;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
             Math.sin(time / 820 + node.phase + index * 1.7) * waveForce -
-            (x / distance) * centerPull -
-            (x / distance) * radialError * 0.0038;
+            (x / distance) * centerPull;
           node.vy =
             (node.vy ?? 0) +
             Math.sin(orbit) * orbitalForce +
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
-            (y / distance) * centerPull -
-            (y / distance) * radialError * 0.0038;
+            (y / distance) * centerPull;
         }
         if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
           const pressure = hovered.hoverCharge ?? 0;
-          const safeDistance = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + graphNodeRadius(hovered.influence) * (hovered.hoverScale ?? 1) + 28;
-          const radius = safeDistance + 170 + pressure * 230;
-          const overlapPressure = Math.max(0, safeDistance - distance) / safeDistance;
+          const radius = 300 + pressure * 260;
           const falloff = Math.max(0, 1 - distance / radius);
-          const influence = overlapPressure * 5.6 + falloff * falloff * (0.45 + pressure * 2.6);
-          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 3.2;
-          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 3.2;
+          const influence = falloff * falloff * (0.18 + pressure * 1.45);
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 2.35;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 2.35;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.1)).tick(1);
-      const padding = Math.max(34, Math.min(graphSize.width, graphSize.height) * 0.055);
-      const nodeExtents = nodes.map((node) => {
-        const visualRadius = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + (bookmarkedNodeIds.has(node.id) ? 24 : 14);
-        return {
-          minX: (node.x ?? 0) - visualRadius,
-          maxX: (node.x ?? 0) + visualRadius,
-          minY: (node.y ?? 0) - visualRadius,
-          maxY: (node.y ?? 0) + visualRadius + 18,
-        };
-      });
-      const minX = Math.min(...nodeExtents.map((extent) => extent.minX)) - padding;
-      const maxX = Math.max(...nodeExtents.map((extent) => extent.maxX)) + padding;
-      const minY = Math.min(...nodeExtents.map((extent) => extent.minY)) - padding;
-      const maxY = Math.max(...nodeExtents.map((extent) => extent.maxY)) + padding;
-      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 2.45);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
+      const xs = nodes.map((node) => node.x ?? 0);
+      const ys = nodes.map((node) => node.y ?? 0);
+      const minX = Math.min(...xs) - 115;
+      const maxX = Math.max(...xs) + 115;
+      const minY = Math.min(...ys) - 115;
+      const maxY = Math.max(...ys) + 115;
+      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
       const nextTransform = {
         scale,
         x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
         y: graphSize.height / 2 - ((minY + maxY) / 2) * scale,
       };
-      transformRef.current = transformInitializedRef.current
-        ? {
-            scale: transformRef.current.scale + (nextTransform.scale - transformRef.current.scale) * 0.08,
-            x: transformRef.current.x + (nextTransform.x - transformRef.current.x) * 0.08,
-            y: transformRef.current.y + (nextTransform.y - transformRef.current.y) * 0.08,
-          }
-        : nextTransform;
-      transformInitializedRef.current = true;
-      if (hovered) {
-        setHoverCardPosition({
-          x: (hovered.x ?? 0) * transformRef.current.scale + transformRef.current.x,
-          y: (hovered.y ?? 0) * transformRef.current.scale + transformRef.current.y,
-        });
-      }
+      transformRef.current = {
+        scale: transformRef.current.scale + (nextTransform.scale - transformRef.current.scale) * 0.08,
+        x: transformRef.current.x + (nextTransform.x - transformRef.current.x) * 0.08,
+        y: transformRef.current.y + (nextTransform.y - transformRef.current.y) * 0.08,
+      };
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, graphSize.width, graphSize.height);
