@@ -833,6 +833,7 @@ function PlanViewScreen() {
   const [selectedText, setSelectedText] = useState("");
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
+  const [correctionPrompt, setCorrectionPrompt] = useState("");
   const [exportingPdf, setExportingPdf] = useState(false);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
     active: false,
@@ -876,12 +877,20 @@ function PlanViewScreen() {
     const start = textOffsetInElement(element, range.startContainer, range.startOffset);
     const end = textOffsetInElement(element, range.endContainer, range.endOffset);
     if (start === end) return;
+    const rect = range.getBoundingClientRect();
     setActiveIds(new Set([id]));
     setHighlights((current) => [
       ...current,
       { key: `${id}-${Date.now()}-${current.length}`, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text },
     ]);
     setSelectedText(text);
+    setCorrectionPrompt("");
+    setPromptBox({
+      x: rect.left + rect.width / 2,
+      y: Math.max(20, rect.bottom + 12),
+      action: "Request correction",
+    });
+    setContextMenu(null);
     selection?.removeAllRanges();
   };
 
@@ -923,6 +932,7 @@ function PlanViewScreen() {
 
   const startPrompt = (action: string) => {
     if (!contextMenu) return;
+    setCorrectionPrompt("");
     setPromptBox({ x: contextMenu.x, y: contextMenu.y, action });
     setContextMenu(null);
   };
@@ -1133,11 +1143,20 @@ function PlanViewScreen() {
         </div>
       )}
       {promptBox && (
-        <div className="dexter-edit-prompt" style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }}>
+        <div className="dexter-edit-prompt" style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }} onClick={(event) => event.stopPropagation()}>
           <p className="font-mono text-[10px] font-bold uppercase text-primary">{promptBox.action}</p>
           <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">“{selectedText}”</p>
-          <Textarea rows={4} placeholder="Tell Dexter exactly how to revise this passage..." className="mt-3 rounded-none border-2 border-industrial bg-background text-sm" />
-          <Button className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary">Queue guided edit</Button>
+          <Textarea
+            rows={4}
+            value={correctionPrompt}
+            onChange={(event) => setCorrectionPrompt(event.target.value)}
+            autoFocus
+            placeholder="Tell Dexter exactly how to revise this passage..."
+            className="mt-3 rounded-none border-2 border-industrial bg-background text-sm"
+          />
+          <Button className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary">
+            Queue correction
+          </Button>
         </div>
       )}
       {lasso.drawing && (
