@@ -366,7 +366,7 @@ function LiteratureGraphScreen() {
           const orbit = Math.atan2(y, x) + Math.PI / 2;
           const orbitalForce = 0.024 + node.influence * 0.014;
           const waveForce = 0.026;
-          const centerPull = Math.min(distance, 420) * 0.00012;
+          const centerPull = Math.min(distance, 360) * 0.00024;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
@@ -383,7 +383,7 @@ function LiteratureGraphScreen() {
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
           const pressure = hovered.hoverCharge ?? 0;
-          const radius = 300 + pressure * 260;
+          const radius = 220 + pressure * 180;
           const falloff = Math.max(0, 1 - distance / radius);
           const influence = falloff * falloff * (0.18 + pressure * 1.45);
           node.vx = (node.vx ?? 0) + (dx / distance) * influence * 2.35;
