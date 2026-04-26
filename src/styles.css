@@ -77,6 +77,9 @@
   --popover-foreground: oklch(0.203 0 0);
   --primary: oklch(0.526 0.105 213.7);
   --primary-foreground: oklch(0.994 0.011 84.6);
+  --lab-sign-fill: oklch(0.86 0.17 78);
+  --lab-sign-shade: oklch(0.62 0.2 37);
+  --lab-sign-glow: oklch(0.82 0.18 67);
   --secondary: oklch(0.922 0.035 86.1);
   --secondary-foreground: oklch(0.203 0 0);
   --muted: oklch(0.922 0.035 86.1);
@@ -112,6 +115,9 @@
   --popover-foreground: oklch(0.984 0.003 247.858);
   --primary: oklch(0.929 0.013 255.508);
   --primary-foreground: oklch(0.208 0.042 265.755);
+  --lab-sign-fill: oklch(0.86 0.17 78);
+  --lab-sign-shade: oklch(0.62 0.2 37);
+  --lab-sign-glow: oklch(0.82 0.18 67);
   --secondary: oklch(0.279 0.041 260.031);
   --secondary-foreground: oklch(0.984 0.003 247.858);
   --muted: oklch(0.279 0.041 260.031);
@@ -242,6 +248,7 @@
 
   .dexter-neon-sign {
     overflow: visible;
+    background-color: color-mix(in oklab, var(--lab-sign-shade) 18%, var(--card));
     transform-origin: center;
     animation:
       dexter-sign-power 1900ms steps(1, end) 1460ms both,
@@ -250,7 +257,7 @@
 
   .dexter-sign-title {
     animation: dexter-letter-glow 1900ms steps(1, end) 1460ms both;
-    color: var(--primary);
+    color: var(--lab-sign-fill);
     letter-spacing: 0.02em;
     -webkit-text-stroke: 2px var(--industrial);
     text-shadow: 3px 3px 0 var(--industrial);
@@ -263,7 +270,7 @@
     border: 2px solid var(--industrial);
     background: var(--accent);
     opacity: 0;
-    box-shadow: 0 0 0 color-mix(in oklab, var(--accent) 0%, transparent);
+    box-shadow: 0 0 0 color-mix(in oklab, var(--lab-sign-glow) 0%, transparent);
   }
 
   .dexter-spark-a {
@@ -332,26 +339,26 @@
 
 @keyframes dexter-sign-power {
   0%, 12%, 23%, 38% { background-color: var(--card); }
-  13%, 18%, 24%, 31%, 39%, 100% { background-color: color-mix(in oklab, var(--primary) 10%, var(--card)); }
+  13%, 18%, 24%, 31%, 39%, 100% { background-color: color-mix(in oklab, var(--lab-sign-shade) 18%, var(--card)); }
 }
 
 @keyframes dexter-letter-glow {
   0%, 12%, 23%, 38% {
-    color: color-mix(in oklab, var(--primary) 58%, var(--industrial));
+    color: color-mix(in oklab, var(--lab-sign-shade) 70%, var(--industrial));
     text-shadow: 3px 3px 0 var(--industrial);
   }
   13%, 18%, 24%, 31% {
-    color: color-mix(in oklab, var(--primary) 72%, var(--card));
+    color: color-mix(in oklab, var(--lab-sign-fill) 86%, var(--card));
     text-shadow:
       3px 3px 0 var(--industrial),
-      0 0 10px color-mix(in oklab, var(--primary) 46%, transparent);
+      0 0 10px color-mix(in oklab, var(--lab-sign-glow) 54%, transparent);
   }
   39%, 100% {
-    color: var(--primary);
+    color: var(--lab-sign-fill);
     text-shadow:
       3px 3px 0 var(--industrial),
-      0 0 8px color-mix(in oklab, var(--primary) 44%, transparent),
-      0 0 20px color-mix(in oklab, var(--primary) 24%, transparent);
+      0 0 8px color-mix(in oklab, var(--lab-sign-glow) 58%, transparent),
+      0 0 22px color-mix(in oklab, var(--lab-sign-glow) 32%, transparent);
   }
 }
 
@@ -364,7 +371,7 @@
 
 @keyframes dexter-spark-jump {
   0% { opacity: 0; transform: translate(0, 0) scale(0.2) rotate(0deg); }
-  22% { opacity: 1; transform: translate(10px, -10px) scale(1.25) rotate(22deg); box-shadow: 0 0 22px color-mix(in oklab, var(--accent) 78%, transparent); }
+  22% { opacity: 1; transform: translate(10px, -10px) scale(1.25) rotate(22deg); box-shadow: 0 0 22px color-mix(in oklab, var(--lab-sign-glow) 78%, transparent); }
   46% { opacity: 1; transform: translate(-7px, 7px) scale(0.8) rotate(55deg); }
   100% { opacity: 0; transform: translate(18px, -18px) scale(0.12) rotate(92deg); }
 }
