@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useDexterStore } from "@/lib/dexter-store";
 import { exampleHypotheses, type Paper, type PlanSection } from "@/lib/mock-plan";
 import { cn } from "@/lib/utils";
+import dexterBeakerLogo from "@/assets/dexter-beaker-logo.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -113,12 +114,8 @@ function LoadingScreen() {
       <div className="absolute inset-y-0 left-0 w-1/2 border-r-2 border-industrial bg-primary dexter-door-left" />
       <div className="absolute inset-y-0 right-0 w-1/2 border-l-2 border-industrial bg-primary dexter-door-right" />
       <section className="relative z-10 w-full max-w-3xl text-center dexter-title-reveal">
-        <div className="mx-auto mb-7 flex h-36 w-36 items-end justify-center border-2 border-industrial bg-card p-5 dexter-shadow dexter-instrument-pulse">
-          <div className="relative h-28 w-20">
-            <div className="absolute left-7 top-0 h-10 w-6 border-2 border-industrial bg-background" />
-            <div className="absolute bottom-0 left-1 h-20 w-18 border-2 border-industrial bg-primary" />
-            <div className="absolute bottom-3 left-4 h-6 w-12 border-2 border-industrial bg-accent/90" />
-          </div>
+        <div className="dexter-beaker-mark mx-auto mb-7 flex h-40 w-32 items-center justify-center dexter-instrument-pulse">
+          <img src={dexterBeakerLogo} alt="Dexter beaker logo" className="h-full w-full object-contain" />
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-primary">Experiment bay 07</p>
         <div className="dexter-neon-sign relative mx-auto mt-4 w-fit border-2 border-industrial bg-card px-5 py-4 dexter-shadow md:px-8 md:py-5">
