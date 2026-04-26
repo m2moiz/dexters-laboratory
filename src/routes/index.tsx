@@ -883,18 +883,13 @@ function PlanViewScreen() {
     const start = textOffsetInElement(element, range.startContainer, range.startOffset);
     const end = textOffsetInElement(element, range.endContainer, range.endOffset);
     if (start === end) return;
-    const rect = range.getBoundingClientRect();
     setActiveIds(new Set([id]));
     const highlightKey = `${id}-${Date.now()}-${highlights.length}`;
     setHighlights((current) => [...current, { key: highlightKey, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text }]);
     setSelectedText(text);
     setActiveHighlightKey(highlightKey);
     setCorrectionPrompt("");
-    setPromptBox({
-      x: rect.left + rect.width / 2,
-      y: Math.max(20, rect.bottom + 12),
-      action: "Request correction",
-    });
+    setPromptBox(null);
     setContextMenu(null);
     selection?.removeAllRanges();
   };
@@ -911,6 +906,7 @@ function PlanViewScreen() {
       setActiveIds(new Set([id]));
       setSelectedText(highlightKey ? (highlightElement?.innerText.trim() ?? "") : reportElement.innerText.trim());
     }
+    setActiveHighlightKey(highlightKey);
     setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null, highlightKey });
     setPromptBox(null);
   };
@@ -1149,11 +1145,8 @@ function PlanViewScreen() {
       {contextMenu && (
         <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
           {contextMenu.highlightKey && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
+          {contextMenu.highlightKey && <button type="button" onClick={() => startPrompt("Make adjustment")}>Make adjustment</button>}
           <button type="button" onClick={goToReference}>Go to reference</button>
-          <button type="button" onClick={() => startPrompt("Suggest rewrite")}>Suggest rewrite</button>
-          <button type="button" onClick={() => startPrompt("Clarify this")}>Clarify this</button>
-          <button type="button" onClick={() => startPrompt("Make more rigorous")}>Make more rigorous</button>
-          <button type="button" onClick={() => startPrompt("Add caveat")}>Add caveat</button>
           <button type="button" onClick={() => { setLasso((current) => ({ ...current, active: true })); setContextMenu(null); }}>Lasso select region</button>
         </div>
       )}
