@@ -931,7 +931,7 @@ function PlanViewScreen() {
                     <p
                       key={paragraph}
                       data-report-id={itemId}
-                      className={cn("dexter-report-paragraph", selectedIds.has(itemId) && "dexter-report-selected", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
+                      className={cn("dexter-report-paragraph", highlightedIds.has(itemId) && "dexter-report-selected", activeIds.has(itemId) && "dexter-report-active", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
                     >
                       {paragraph}
                     </p>
@@ -982,7 +982,12 @@ function PlanViewScreen() {
           <Button className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary">Queue guided edit</Button>
         </div>
       )}
-      {lasso.drawing && <div className="dexter-lasso-box" style={lassoStyle} />}
+      {lasso.drawing && (
+        <svg className="dexter-lasso-svg" aria-hidden="true">
+          <path className="dexter-lasso-fill" d={lassoPath} />
+          <path className="dexter-lasso-stroke" d={lassoPath} />
+        </svg>
+      )}
     </main>
   );
 }
