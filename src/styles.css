@@ -276,6 +276,94 @@
     box-shadow: 4px 4px 0 var(--industrial);
   }
 
+  .dexter-wave-shell {
+    display: flex;
+    align-items: center;
+    min-height: 18rem;
+  }
+
+  .dexter-wave-launcher {
+    position: relative;
+    display: flex;
+    width: 4.25rem;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 1.1rem 0.5rem;
+    transition: width 220ms ease;
+  }
+
+  .dexter-wave-launcher::before {
+    content: "";
+    position: absolute;
+    inset: 0.25rem auto 0.25rem 0;
+    width: 2.55rem;
+    border: 2px solid var(--industrial);
+    background: color-mix(in oklab, var(--primary) 16%, var(--card));
+    box-shadow: 4px 4px 0 var(--industrial);
+    clip-path: polygon(0 0, 66% 0, 100% 10%, 70% 22%, 100% 34%, 68% 48%, 100% 62%, 69% 77%, 100% 90%, 65% 100%, 0 100%);
+    transition: width 220ms ease, clip-path 220ms ease, background-color 220ms ease;
+  }
+
+  .dexter-wave-launcher:hover,
+  .dexter-wave-launcher:focus-within {
+    width: 13.5rem;
+  }
+
+  .dexter-wave-launcher:hover::before,
+  .dexter-wave-launcher:focus-within::before {
+    width: 12.2rem;
+    background: color-mix(in oklab, var(--primary) 24%, var(--card));
+    clip-path: polygon(0 0, 78% 0, 100% 8%, 82% 20%, 100% 33%, 80% 49%, 100% 64%, 83% 80%, 100% 92%, 78% 100%, 0 100%);
+  }
+
+  .dexter-wave-item {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-height: 2.7rem;
+    align-items: center;
+    gap: 0.75rem;
+    padding-left: 0.38rem;
+    color: var(--foreground);
+    text-decoration: none;
+    transform: translateX(calc(var(--wave-index) * 0.11rem));
+  }
+
+  .dexter-wave-dot {
+    width: 1.35rem;
+    height: 1.35rem;
+    flex: 0 0 auto;
+    border: 2px solid var(--industrial);
+    background: var(--card);
+    box-shadow: 2px 2px 0 var(--industrial);
+    transition: transform 180ms ease, background-color 180ms ease;
+  }
+
+  .dexter-wave-label {
+    max-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: max-width 220ms ease, opacity 160ms ease;
+  }
+
+  .dexter-wave-launcher:hover .dexter-wave-label,
+  .dexter-wave-launcher:focus-within .dexter-wave-label {
+    max-width: 10rem;
+    opacity: 1;
+  }
+
+  .dexter-wave-item:hover .dexter-wave-dot,
+  .dexter-wave-item:focus-visible .dexter-wave-dot,
+  .dexter-wave-item-active .dexter-wave-dot {
+    transform: translateX(0.35rem) scale(1.12);
+    background: var(--accent);
+  }
+
   .dexter-context-menu,
   .dexter-edit-prompt {
     position: fixed;
