@@ -137,7 +137,7 @@ Users can highlight any text in the rendered plan and attach a comment. State is
 - **UI primitives:** shadcn/ui on Radix
 - **Graph:** d3-force + custom canvas rendering (we tried `react-force-graph-2d` and `@xyflow/react`; raw d3 won on look-and-feel)
 - **PDF export:** jsPDF
-- **Deploy:** Vercel + Cloudflare Vite plugin (edge-ready)
+- **Deploy:** Cloudflare Workers (Static Assets + SSR) via GitHub Actions
 
 ### Backend (`backend/`)
 - **Framework:** Next.js 15 App Router (single `POST /api/plan` route)
@@ -184,7 +184,7 @@ Without `OPENAI_API_KEY`, the API gracefully returns the bundled `MOCK_PLAN` so 
 cd frontend
 npm install
 echo "VITE_API_BASE_URL=http://localhost:3000" > .env.local
-npm run dev                  # http://localhost:8080
+npm run dev                  # http://localhost:5173
 ```
 
 Without `VITE_API_BASE_URL`, the frontend talks to the deployed backend automatically — useful for offline UI work.
@@ -245,14 +245,19 @@ dexter-plan-forge/
 
 ## Deployment
 
-Both apps deploy to Vercel on push to `main`:
+Both apps redeploy automatically on push to `main`:
 
-| App | Project root | URL |
-|---|---|---|
-| Frontend | `frontend/` | https://dexters-laboratory.mmmiscellaneous.workers.dev |
-| Backend | `backend/` | https://ai-scientist-ruddy.vercel.app |
+| App | Host | Trigger | URL |
+|---|---|---|---|
+| Frontend | Cloudflare Workers | GitHub Action (`.github/workflows/deploy-frontend.yml`) when `frontend/**` changes | https://dexters-laboratory.mmmiscellaneous.workers.dev |
+| Backend | Vercel | Vercel ↔ GitHub integration (Root Directory `backend/`) | https://ai-scientist-ruddy.vercel.app |
 
-Set `OPENAI_API_KEY` and `TAVILY_API_KEY` in the backend's Vercel env vars. Set `VITE_API_BASE_URL` (optional) and `FRONTEND_URL` (CORS allowlist on the backend) in the frontend's.
+**Required secrets**
+
+- Backend (Vercel project env): `OPENAI_API_KEY`, `TAVILY_API_KEY`, optional `FRONTEND_URL` (CORS allowlist)
+- Frontend (GitHub repo secrets): `CLOUDFLAREAPI` — a Cloudflare API token with the **Edit Cloudflare Workers** template scope. The CF account ID is hardcoded in the workflow (it's not sensitive)
+
+The Cloudflare deploy uses `frontend/wrangler.deploy.jsonc` (renamed from `wrangler.jsonc` so the Cloudflare Vite plugin doesn't auto-discover it during build — chicken-and-egg with `main: dist/server/server.js` not existing pre-build).
 
 ---
 
