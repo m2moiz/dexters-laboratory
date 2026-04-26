@@ -82,37 +82,52 @@ function DexterApp() {
 
 function LoadingScreen() {
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
-  const [visibleLetters, setVisibleLetters] = useState(0);
 
   useEffect(() => {
-    const letterTimer = window.setInterval(() => {
-      setVisibleLetters((current) => Math.min(current + 1, 6));
-    }, 180);
-    const screenTimer = window.setTimeout(() => setCurrentScreen("HYPOTHESIS_INPUT"), 2000);
+    const screenTimer = window.setTimeout(() => setCurrentScreen("HYPOTHESIS_INPUT"), 3400);
     return () => {
-      window.clearInterval(letterTimer);
       window.clearTimeout(screenTimer);
     };
   }, [setCurrentScreen]);
 
   return (
-    <main className={cn(screenClass, "flex items-center justify-center px-6")}> 
-      <div className="text-center">
-        <h1 className="font-display text-[72px] font-semibold leading-none text-primary">
-          {"DEXTER".split("").map((letter, index) => (
-            <span
-              key={letter + index}
-              className={cn(
-                "inline-block transition-all duration-300",
-                index < visibleLetters ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0",
-              )}
-            >
-              {letter}
-            </span>
-          ))}
-        </h1>
-        <p className="mt-5 text-base font-normal">From hypothesis to runnable experiment</p>
+    <main className={cn(screenClass, "dexter-lab-intro relative flex items-center justify-center overflow-hidden px-6")}> 
+      <div className="absolute inset-0 dexter-lab-grid" />
+      <div className="absolute left-8 top-8 hidden w-44 border-2 border-industrial bg-card p-3 dexter-shadow md:block dexter-panel-slide-left">
+        <div className="mb-3 flex gap-2">
+          <span className="h-3 w-3 border-2 border-industrial bg-accent dexter-lab-blink" />
+          <span className="h-3 w-3 border-2 border-industrial bg-primary dexter-lab-blink delay-150" />
+          <span className="h-3 w-3 border-2 border-industrial bg-secondary dexter-lab-blink delay-300" />
+        </div>
+        <div className="space-y-2">
+          <div className="h-2 w-full bg-primary" />
+          <div className="h-2 w-2/3 bg-industrial" />
+          <div className="h-2 w-5/6 bg-primary" />
+        </div>
       </div>
+      <div className="absolute bottom-10 right-8 hidden w-52 border-2 border-industrial bg-card p-4 dexter-shadow md:block dexter-panel-slide-right">
+        <div className="h-20 border-2 border-industrial bg-background p-3">
+          <div className="h-full w-full border-2 border-primary dexter-scan-field" />
+        </div>
+      </div>
+      <div className="absolute inset-y-0 left-0 w-1/2 border-r-2 border-industrial bg-primary dexter-door-left" />
+      <div className="absolute inset-y-0 right-0 w-1/2 border-l-2 border-industrial bg-primary dexter-door-right" />
+      <section className="relative z-10 w-full max-w-3xl text-center dexter-title-reveal">
+        <div className="mx-auto mb-7 flex h-36 w-36 items-end justify-center border-2 border-industrial bg-card p-5 dexter-shadow dexter-instrument-pulse">
+          <div className="relative h-28 w-20">
+            <div className="absolute left-7 top-0 h-10 w-6 border-2 border-industrial bg-background" />
+            <div className="absolute bottom-0 left-1 h-20 w-18 border-2 border-industrial bg-primary" />
+            <div className="absolute bottom-3 left-4 h-6 w-12 border-2 border-industrial bg-accent/90" />
+          </div>
+        </div>
+        <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-primary">Experiment bay 07</p>
+        <h1 className="mt-4 font-display text-5xl font-semibold leading-none text-primary md:text-[76px]">
+          DEXTER’S<br />LABORATORY
+        </h1>
+        <p className="mx-auto mt-5 max-w-md text-base text-muted-foreground">
+          From hypothesis to runnable experiment
+        </p>
+      </section>
     </main>
   );
 }
