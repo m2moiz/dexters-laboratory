@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { Bookmark } from "lucide-react";
@@ -47,6 +47,7 @@ const pressureColor = (pressure: number) => {
 };
 
 type LassoPoint = { x: number; y: number };
+type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string };
 
 const buildFreehandPath = (points: LassoPoint[], close = false) => {
   if (!points.length) return "";
@@ -89,6 +90,18 @@ const lassoTouchesRect = (points: LassoPoint[], rect: DOMRect) => {
     rectPoints.some((point) => pointInPolygon(point, points)) ||
     points.some((point) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
   );
+};
+
+const textOffsetInElement = (element: HTMLElement, node: Node, offset: number) => {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let total = 0;
+  let current = walker.nextNode();
+  while (current) {
+    if (current === node) return total + offset;
+    total += current.textContent?.length ?? 0;
+    current = walker.nextNode();
+  }
+  return total;
 };
 
 type ForceNode = {
@@ -695,6 +708,31 @@ function PaperDetailOverlay({
   );
 }
 
+function HighlightableText({ text, reportId, highlights }: { text: string; reportId: string; highlights: ReportHighlight[] }) {
+  const sortedHighlights = [...highlights]
+    .filter((highlight) => highlight.reportId === reportId)
+    .sort((a, b) => a.start - b.start);
+  if (!sortedHighlights.length) return <>{text}</>;
+
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  sortedHighlights.forEach((highlight) => {
+    const start = Math.max(cursor, Math.min(highlight.start, text.length));
+    const end = Math.max(start, Math.min(highlight.end, text.length));
+    if (cursor < start) nodes.push(<span key={`${highlight.key}-before`}>{text.slice(cursor, start)}</span>);
+    if (start < end) {
+      nodes.push(
+        <mark key={highlight.key} className="dexter-report-selected" data-highlight-key={highlight.key}>
+          {text.slice(start, end)}
+        </mark>,
+      );
+    }
+    cursor = end;
+  });
+  if (cursor < text.length) nodes.push(<span key={`${reportId}-tail`}>{text.slice(cursor)}</span>);
+  return <>{nodes}</>;
+}
+
 function PlanGeneratingScreen() {
   const plan = useDexterStore((state) => state.plan);
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
@@ -759,10 +797,10 @@ function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [highlightedIds, setHighlightedIds] = useState<Set<string>>(() => new Set());
+  const [highlights, setHighlights] = useState<ReportHighlight[]>([]);
   const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
   const [activeReference, setActiveReference] = useState<string | null>(null);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
@@ -799,11 +837,19 @@ function PlanViewScreen() {
     const text = selection?.toString().trim() ?? "";
     if (!text) return;
     const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    const element = range?.commonAncestorContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const startElement = range?.startContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const endElement = range?.endContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const element = startElement && startElement === endElement ? startElement : null;
     const id = element?.dataset.reportId;
-    if (!id) return;
+    if (!id || !range) return;
+    const start = textOffsetInElement(element, range.startContainer, range.startOffset);
+    const end = textOffsetInElement(element, range.endContainer, range.endOffset);
+    if (start === end) return;
     setActiveIds(new Set([id]));
-    setHighlightedIds((current) => new Set(current).add(id));
+    setHighlights((current) => [
+      ...current,
+      { key: `${id}-${Date.now()}-${current.length}`, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text },
+    ]);
     setSelectedText(text);
     selection?.removeAllRanges();
   };
@@ -811,14 +857,16 @@ function PlanViewScreen() {
   const openContextMenu = (event: React.MouseEvent) => {
     const target = event.target as HTMLElement;
     const reportElement = target.closest("[data-report-id]") as HTMLElement | null;
+    const highlightElement = target.closest("[data-highlight-key]") as HTMLElement | null;
     if (!reportElement && !selectedText) return;
     event.preventDefault();
     const id = reportElement?.dataset.reportId;
+    const highlightKey = highlightElement?.dataset.highlightKey ?? null;
     if (id && !activeIds.has(id)) {
       setActiveIds(new Set([id]));
-      setSelectedText(reportElement.innerText.trim());
+      setSelectedText(highlightKey ? (highlightElement?.innerText.trim() ?? "") : reportElement.innerText.trim());
     }
-    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null });
+    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null, highlightKey });
     setPromptBox(null);
   };
 
@@ -832,15 +880,11 @@ function PlanViewScreen() {
   };
 
   const undoHighlight = () => {
-    if (!contextMenu?.targetId) return;
-    setHighlightedIds((current) => {
-      const next = new Set(current);
-      next.delete(contextMenu.targetId as string);
-      return next;
-    });
+    if (!contextMenu?.highlightKey) return;
+    setHighlights((current) => current.filter((highlight) => highlight.key !== contextMenu.highlightKey));
     setActiveIds((current) => {
       const next = new Set(current);
-      next.delete(contextMenu.targetId as string);
+      if (contextMenu.targetId) next.delete(contextMenu.targetId);
       return next;
     });
     setContextMenu(null);
@@ -874,7 +918,14 @@ function PlanViewScreen() {
         });
         const pickedIds = picked.map((element) => element.dataset.reportId).filter(Boolean) as string[];
         setActiveIds(new Set(pickedIds));
-        setHighlightedIds((current) => new Set([...current, ...pickedIds]));
+        setHighlights((current) => [
+          ...current,
+          ...picked.map((element, index) => {
+            const reportId = element.dataset.reportId ?? `lasso-${index}`;
+            const text = element.innerText.trim();
+            return { key: `${reportId}-lasso-${Date.now()}-${index}`, reportId, start: 0, end: text.length, text };
+          }),
+        ]);
         setSelectedText(picked.map((element) => element.innerText.trim()).join(" "));
         setLasso({ active: false, drawing: false, points: [] });
       }}
@@ -912,8 +963,8 @@ function PlanViewScreen() {
           >
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
-            <p className={cn("mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground", highlightedIds.has("hypothesis") && "dexter-report-selected", activeIds.has("hypothesis") && "dexter-report-active")} data-report-id="hypothesis">
-              {hypothesis}
+            <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
+              <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} />
             </p>
             {plan.sections.map((section, sectionIndex) => (
               <section
@@ -931,9 +982,9 @@ function PlanViewScreen() {
                     <p
                       key={paragraph}
                       data-report-id={itemId}
-                      className={cn("dexter-report-paragraph", highlightedIds.has(itemId) && "dexter-report-selected", activeIds.has(itemId) && "dexter-report-active", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
+                      className={cn("dexter-report-paragraph", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
                     >
-                      {paragraph}
+                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} />
                     </p>
                   );
                 })}
@@ -966,7 +1017,7 @@ function PlanViewScreen() {
       </div>
       {contextMenu && (
         <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
-          {contextMenu.targetId && highlightedIds.has(contextMenu.targetId) && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
+          {contextMenu.highlightKey && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
           <button type="button" onClick={goToReference}>Go to reference</button>
           <button type="button" onClick={() => startPrompt("Suggest rewrite")}>Suggest rewrite</button>
           <button type="button" onClick={() => startPrompt("Clarify this")}>Clarify this</button>
