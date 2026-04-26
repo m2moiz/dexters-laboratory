@@ -747,7 +747,12 @@ function HighlightableText({ text, reportId, highlights }: { text: string; repor
     if (cursor < start) nodes.push(<span key={`${highlight.key}-before`}>{text.slice(cursor, start)}</span>);
     if (start < end) {
       nodes.push(
-        <mark key={highlight.key} className="dexter-report-selected" data-highlight-key={highlight.key}>
+        <mark
+          key={highlight.key}
+          className={cn("dexter-report-selected", highlight.correction && "dexter-report-queued")}
+          data-highlight-key={highlight.key}
+          title={highlight.correction ? `Queued correction: ${highlight.correction}` : undefined}
+        >
           {text.slice(start, end)}
         </mark>,
       );
