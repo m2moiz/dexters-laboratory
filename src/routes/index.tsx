@@ -178,6 +178,7 @@ function LiteratureGraphScreen() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
+  const transformInitializedRef = useRef(false);
   const dragRef = useRef<ForceNode | null>(null);
   const pointerDownRef = useRef<{ node: ForceNode; x: number; y: number; didDrag: boolean } | null>(null);
   const nodesRef = useRef<ForceNode[]>([]);
@@ -371,8 +372,8 @@ function LiteratureGraphScreen() {
           const distance = Math.max(Math.hypot(x, y), 1);
           const orbit = Math.atan2(y, x) + Math.PI / 2;
           const ringRadius = graphRingRadius(index);
-          const orbitalForce = isHovered ? 0 : 0.008 + node.influence * 0.005;
-          const waveForce = isHovered ? 0 : 0.012;
+          const orbitalForce = 0.01 + node.influence * 0.006;
+          const waveForce = 0.014;
           const centerPull = Math.min(distance, 360) * 0.00016;
           const radialError = distance - ringRadius;
           node.vx =
@@ -387,10 +388,6 @@ function LiteratureGraphScreen() {
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
             (y / distance) * centerPull -
             (y / distance) * radialError * 0.0038;
-          if (isHovered) {
-            node.vx = (node.vx ?? 0) * 0.52;
-            node.vy = (node.vy ?? 0) * 0.52;
-          }
         }
         if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
@@ -427,11 +424,20 @@ function LiteratureGraphScreen() {
         x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
         y: graphSize.height / 2 - ((minY + maxY) / 2) * scale,
       };
-      transformRef.current = {
-        scale: transformRef.current.scale + (nextTransform.scale - transformRef.current.scale) * 0.08,
-        x: transformRef.current.x + (nextTransform.x - transformRef.current.x) * 0.08,
-        y: transformRef.current.y + (nextTransform.y - transformRef.current.y) * 0.08,
-      };
+      transformRef.current = transformInitializedRef.current
+        ? {
+            scale: transformRef.current.scale + (nextTransform.scale - transformRef.current.scale) * 0.08,
+            x: transformRef.current.x + (nextTransform.x - transformRef.current.x) * 0.08,
+            y: transformRef.current.y + (nextTransform.y - transformRef.current.y) * 0.08,
+          }
+        : nextTransform;
+      transformInitializedRef.current = true;
+      if (hovered) {
+        setHoverCardPosition({
+          x: (hovered.x ?? 0) * transformRef.current.scale + transformRef.current.x,
+          y: (hovered.y ?? 0) * transformRef.current.scale + transformRef.current.y,
+        });
+      }
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, graphSize.width, graphSize.height);
@@ -470,13 +476,6 @@ function LiteratureGraphScreen() {
       node.fy = (event.clientY - bounds.top - transform.y) / transform.scale;
     };
 
-    const releaseHoverPin = (node: ForceNode | null) => {
-      if (node && node !== dragRef.current) {
-        node.fx = undefined;
-        node.fy = undefined;
-      }
-    };
-
     const onPointerMove = (event: PointerEvent) => {
       if (dragRef.current) {
         if (pointerDownRef.current && Math.hypot(event.clientX - pointerDownRef.current.x, event.clientY - pointerDownRef.current.y) > 4) {
@@ -487,14 +486,6 @@ function LiteratureGraphScreen() {
         return;
       }
       const nextHovered = getNodeAt(event) ?? null;
-      const currentHovered = hoveredNode;
-      if (currentHovered?.id !== nextHovered?.id) releaseHoverPin(currentHovered);
-      if (nextHovered) {
-        moveNodeTo(nextHovered, event);
-        nextHovered.vx = 0;
-        nextHovered.vy = 0;
-        simulationRef.current?.alpha(0.2).restart();
-      }
       setHoverCardPosition({ x: event.clientX, y: event.clientY });
       setHoveredNode((current) => (current?.id === nextHovered?.id ? current : nextHovered));
       canvas.style.cursor = nextHovered ? "grab" : "default";
@@ -510,7 +501,6 @@ function LiteratureGraphScreen() {
       pointerDownRef.current = { node, x: event.clientX, y: event.clientY, didDrag: false };
       canvas.setPointerCapture(event.pointerId);
       moveNodeTo(node, event);
-      releaseHoverPin(hoveredNode);
       setHoveredNode(null);
       simulationRef.current?.alpha(0.18).restart();
       canvas.style.cursor = "grabbing";
@@ -538,7 +528,6 @@ function LiteratureGraphScreen() {
     canvas.addEventListener("pointerup", onPointerUp);
     canvas.addEventListener("pointerleave", onPointerUp);
     return () => {
-      releaseHoverPin(hoveredNode);
       canvas.removeEventListener("pointermove", onPointerMove);
       canvas.removeEventListener("pointerdown", onPointerDown);
       canvas.removeEventListener("pointerup", onPointerUp);
