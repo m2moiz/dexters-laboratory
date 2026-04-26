@@ -1,0 +1,159 @@
+{
+  "_description": "Standard lab cost parameters for budget line item generation. All values in EUR. European pricing as of 2025.",
+
+  "laborRates": {
+    "postdoc_per_hour": 40,
+    "phd_student_per_hour": 28,
+    "lab_technician_per_hour": 25,
+    "senior_scientist_per_hour": 65,
+    "pi_per_hour": 120,
+    "research_associate_per_hour": 35,
+    "bioinformatician_per_hour": 55
+  },
+
+  "equipmentTimeRates": {
+    "flow_cytometer_per_hour": 45,
+    "confocal_microscope_per_hour": 85,
+    "electron_microscope_per_hour": 150,
+    "hplc_per_hour": 35,
+    "potentiostat_per_day": 120,
+    "qpcr_machine_per_run": 8,
+    "plate_reader_per_hour": 15,
+    "anaerobic_chamber_per_day": 60,
+    "liquid_nitrogen_storage_per_week": 40,
+    "biosafety_cabinet_per_hour": 10,
+    "co2_incubator_per_week": 25,
+    "western_blot_system_per_gel": 15,
+    "centrifuge_per_run": 3,
+    "pcr_thermocycler_per_run": 2,
+    "gel_electrophoresis_per_run": 5,
+    "nanodrop_per_session": 8,
+    "bioanalyzer_per_run": 45,
+    "sonicator_per_session": 5,
+    "lyophilizer_per_day": 80,
+    "atomic_force_microscope_per_hour": 120,
+    "nanoparticle_sizer_dls_per_hour": 40,
+    "teer_meter_per_session": 5,
+    "anaerobic_glove_box_per_hour": 25,
+    "gas_chromatography_per_run": 18,
+    "mass_spectrometer_lc_ms_per_run": 85,
+    "fluorescence_microscope_per_hour": 30,
+    "automated_cell_counter_per_run": 5,
+    "syringe_pump_per_day": 20,
+    "plasma_cleaner_per_session": 15
+  },
+
+  "consumableCostBands": {
+    "_note": "Typical EUR ranges for common consumable categories, to assist LLM budget estimates",
+    "cell_line_per_vial": { "low": 200, "mid": 550, "high": 1200 },
+    "primary_antibody_100ug": { "low": 150, "mid": 320, "high": 650 },
+    "secondary_antibody_hrp_500ul": { "low": 60, "mid": 100, "high": 180 },
+    "elisa_kit_96well": { "low": 120, "mid": 210, "high": 450 },
+    "rna_extraction_kit_50preps": { "low": 120, "mid": 180, "high": 280 },
+    "cdna_synthesis_kit_100rxns": { "low": 100, "mid": 150, "high": 250 },
+    "qpcr_supermix_200rxns": { "low": 100, "mid": 165, "high": 280 },
+    "qpcr_primer_pair": { "low": 30, "mid": 40, "high": 65 },
+    "protein_gel_precast_10gels": { "low": 120, "mid": 195, "high": 320 },
+    "probiotic_strain_atcc": { "low": 220, "mid": 280, "high": 400 },
+    "mouse_c57bl6_per_animal": { "low": 35, "mid": 45, "high": 70 },
+    "transwell_inserts_24well": { "low": 70, "mid": 95, "high": 150 },
+    "screen_printed_electrode_strip": { "low": 1.2, "mid": 1.8, "high": 3.5 },
+    "hplc_column_analytical": { "low": 250, "mid": 430, "high": 700 }
+  },
+
+  "typicalLabTimeByExperimentType": {
+    "in_vitro_simple": {
+      "_description": "E.g., cell viability assay, single-endpoint ELISA",
+      "totalHours": 80,
+      "breakdown": { "technician": 60, "postdoc": 20 }
+    },
+    "in_vitro_complex": {
+      "_description": "E.g., cryopreservation with multiple conditions, qPCR + WB",
+      "totalHours": 160,
+      "breakdown": { "technician": 100, "postdoc": 60 }
+    },
+    "in_vitro_barrier_function": {
+      "_description": "E.g., Caco-2 Transwell TEER + permeability, 21-day differentiation",
+      "totalHours": 200,
+      "breakdown": { "technician": 120, "postdoc": 80 }
+    },
+    "in_vivo_4weeks": {
+      "_description": "E.g., mouse gavage + tissue collection + analysis",
+      "totalHours": 240,
+      "breakdown": { "technician": 160, "postdoc": 80 }
+    },
+    "in_vivo_8weeks": {
+      "_description": "E.g., long-term colonisation + multiple tissue endpoints",
+      "totalHours": 380,
+      "breakdown": { "technician": 240, "postdoc": 140 }
+    },
+    "electrochemical_basic": {
+      "_description": "E.g., biosensor fabrication + EIS + CV + LOD curve",
+      "totalHours": 120,
+      "breakdown": { "technician": 60, "postdoc": 60 }
+    },
+    "electrochemical_microfluidic": {
+      "_description": "Adds PDMS chip fabrication, syringe pump setup",
+      "totalHours": 180,
+      "breakdown": { "technician": 80, "postdoc": 100 }
+    },
+    "microbial_bes_4weeks": {
+      "_description": "E.g., Sporomusa BES with product quantification",
+      "totalHours": 200,
+      "breakdown": { "technician": 100, "postdoc": 100 }
+    },
+    "microbial_bes_8weeks": {
+      "_description": "E.g., BES optimisation + pH sweep + HPLC profiling",
+      "totalHours": 320,
+      "breakdown": { "technician": 160, "postdoc": 160 }
+    }
+  },
+
+  "perDomainBudgetRanges": {
+    "_note": "Typical total experiment budget in EUR including labor, reagents, equipment, and overhead",
+    "cell_biology_in_vitro_simple": { "min": 2000, "typical": 6000, "max": 12000 },
+    "cell_biology_in_vitro_complex": { "min": 5000, "typical": 12000, "max": 25000 },
+    "gut_health_in_vitro_caco2": { "min": 4000, "typical": 9000, "max": 18000 },
+    "gut_health_in_vivo_4week_mouse": { "min": 8000, "typical": 16000, "max": 35000 },
+    "gut_health_in_vivo_8week_mouse": { "min": 14000, "typical": 28000, "max": 55000 },
+    "diagnostics_electrochemical_biosensor": { "min": 3000, "typical": 8000, "max": 18000 },
+    "diagnostics_microfluidic_biosensor": { "min": 5000, "typical": 12000, "max": 25000 },
+    "climate_microbial_bes_4week": { "min": 5000, "typical": 13000, "max": 28000 },
+    "climate_microbial_bes_8week_optimisation": { "min": 9000, "typical": 22000, "max": 45000 }
+  },
+
+  "animalCosts": {
+    "c57bl6_mouse_purchase_eur": 42,
+    "balbc_mouse_purchase_eur": 38,
+    "animal_housing_per_mouse_per_week_eur": 12,
+    "iacuc_protocol_fee_eur": 500,
+    "veterinary_oversight_per_hour_eur": 90,
+    "isoflurane_anaesthesia_per_session_eur": 15,
+    "endpoint_blood_collection_per_mouse_eur": 8
+  },
+
+  "sequencingCosts": {
+    "sanger_per_reaction_eur": 8,
+    "16s_rrna_illumina_per_sample_eur": 35,
+    "whole_metagenome_shotgun_per_sample_eur": 180,
+    "rnaseq_bulk_per_sample_eur": 150,
+    "single_cell_rnaseq_per_sample_eur": 650
+  },
+
+  "shippingAndHandling": {
+    "standard_reagent_per_order_eur": 25,
+    "dry_ice_biological_per_order_eur": 55,
+    "live_cell_priority_per_order_eur": 95,
+    "hazmat_chemical_per_order_eur": 40,
+    "international_customs_buffer_eur": 30
+  },
+
+  "overheadRates": {
+    "institutional_overhead_fraction": 0.12,
+    "consumables_markup_fraction": 0.08
+  },
+
+  "contingencyPercentRecommended": 12,
+
+  "currencyNote": "All prices in EUR. Sigma-Aldrich, Thermo Fisher, ATCC European pricing 2024-2025. Add 5-8% VAT where applicable."
+}
