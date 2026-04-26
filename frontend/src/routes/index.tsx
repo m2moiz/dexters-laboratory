@@ -428,9 +428,9 @@ function LiteratureGraphScreen() {
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(0.82))
       .force("center", forceCenter(0, 0).strength(centerStrength))
       .alpha(1)
-      .alphaDecay(0.0016)
-      .alphaMin(0.08)
-      .velocityDecay(0.18);
+      .alphaDecay(0.04)
+      .alphaMin(0.001)
+      .velocityDecay(0.6);
 
     simulationRef.current = simulation;
     return () => {
@@ -456,7 +456,7 @@ function LiteratureGraphScreen() {
       const hovered = hoveredNode ? nodes.find((node) => node.id === hoveredNode.id) : null;
       const renderMinScale = Math.max(0.6, Math.min(1.0, 4 / Math.max(nodes.length, 1)));
       const boundaryRadius = Math.min(graphSize.width, graphSize.height) / (2 * renderMinScale) - 140;
-      nodes.forEach((node, index) => {
+      nodes.forEach((node) => {
         const isHovered = node.id === hoveredNode?.id;
         const targetCharge = isHovered ? 1 : 0;
         node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.012 : 0.1)));
@@ -466,20 +466,9 @@ function LiteratureGraphScreen() {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
           const distance = Math.max(Math.hypot(x, y), 1);
-          const orbit = Math.atan2(y, x) + Math.PI / 2;
-          const orbitalForce = 0.024 + node.influence * 0.014;
-          const waveForce = 0.026;
-          const centerPull = Math.min(distance, 420) * 0.00012;
-          node.vx =
-            (node.vx ?? 0) +
-            Math.cos(orbit) * orbitalForce +
-            Math.sin(time / 820 + node.phase + index * 1.7) * waveForce -
-            (x / distance) * centerPull;
-          node.vy =
-            (node.vy ?? 0) +
-            Math.sin(orbit) * orbitalForce +
-            Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
-            (y / distance) * centerPull;
+          const centerPull = Math.min(distance, 420) * 0.0008;
+          node.vx = (node.vx ?? 0) - (x / distance) * centerPull;
+          node.vy = (node.vy ?? 0) - (y / distance) * centerPull;
           if (distance > boundaryRadius) {
             const overshoot = distance - boundaryRadius;
             const pullback = Math.min(overshoot * 0.06, 6);
@@ -499,7 +488,8 @@ function LiteratureGraphScreen() {
           node.vy = (node.vy ?? 0) + (dy / distance) * influence * 2.35;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
+      if (hovered) simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.05));
+      simulationRef.current?.tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 115;
