@@ -1,37 +1,55 @@
-I’ll update the report interaction so text selection behaves like a real annotation layer instead of disappearing after mouse-up, and I’ll replace the rectangle lasso with a hand-drawn freeform selection experience.
+I’ll add intuitive back navigation between Dexter’s workflow screens and move the screen-specific interaction state into the shared store so users can move forward/back without losing their work.
 
-Plan:
+## Recommended button location
 
-1. Make dragged text highlights persist
-   - When the user drags across report text, store that selection as a persistent highlight/annotation.
-   - Keep the selected passage visibly marked after mouse-up instead of clearing the browser selection with no lasting state.
-   - Preserve the current squiggly/hand-marked feel, but make it more intentional: warm translucent highlight first, with a rough wavy underline/marker treatment so it feels hand-annotated.
+The optimal location is the existing top header/action area on each screen:
 
-2. Add “Undo highlight” to the right-click menu
-   - If the user right-clicks an already-highlighted passage, show an “Undo highlight” option.
-   - Selecting it removes that annotation only, without disturbing other highlights.
-   - Keep the existing actions such as “Go to reference,” “Suggest rewrite,” and “Make more rigorous.”
+```text
+[Back]    current context / hypothesis                         [Continue]
+```
 
-3. Replace rectangle lasso with a true freehand lasso
-   - Change the lasso mode from drawing a rectangular box to drawing a freeform path that follows the pointer.
-   - Render the path as a sketchy, dashed, slightly imperfect line, matching a rough Excalidraw-style annotation vibe.
-   - While drawing, show a subtle warm fill inside/around the selection path and a small “lasso active” cursor/label so it feels deliberate.
+Why this fits best:
+- It matches the existing “Continue to Plan” placement instead of introducing a new control pattern.
+- Back belongs on the left, forward belongs on the right, which is the most natural reading/navigation flow.
+- It keeps the canvas/report area uncluttered and doesn’t compete with node details, lasso tools, or report text selection.
+- On mobile, the controls can stack or remain compact in the header without blocking content.
 
-4. Use freehand lasso selection logic
-   - Track the lasso path points while dragging.
-   - On release, determine which report paragraphs/passages intersect or sit inside the drawn shape.
-   - Mark those selected passages with the same persistent highlight treatment used for dragged text.
+## Implementation plan
 
-5. Refine the animation and visual style
-   - Add a natural “ink settling” animation when highlights are created.
-   - Add a hand-drawn lasso stroke animation, as if the line is being drawn in real time.
-   - Use the current warm paper palette, teal/primary accent, and amber glow sparingly so the result feels cohesive with the Dexter lab theme while moving toward the rough-but-nice Excalidraw feel.
+1. **Add workflow navigation helpers**
+   - Define the ordered workflow screens: hypothesis input → literature graph → plan generation → report view.
+   - Add `goToPreviousScreen` / `goToNextScreen` style helpers in the Zustand store, or explicit actions for the few transitions.
+   - Keep the loading intro out of normal back navigation.
 
-Technical details:
+2. **Add a reusable navigation bar/control**
+   - Create a consistent “Back” button treatment that uses the same industrial/Dexter visual language as the current buttons.
+   - Place it in the left side of screen headers, with forward/continue actions on the right.
+   - On the first input screen, either hide Back or disable it so there’s no confusing dead action.
 
-- Update `PlanViewScreen` in `src/routes/index.tsx` to store persistent annotations rather than only paragraph IDs.
-- Replace the current `lasso` rectangle state with freehand path state: an array of pointer coordinates, drawing status, and active mode.
-- Render the lasso using an absolutely/fixed-position SVG overlay instead of a `<div>` rectangle.
-- Add helper functions for point-in-polygon/intersection-style selection against report text block bounding boxes.
-- Update the context menu logic so it detects whether the clicked text block is already highlighted and conditionally includes “Undo highlight.”
-- Update `src/styles.css` with sketch-style highlight, rough underline, freehand lasso stroke, lasso fill, and subtle draw/settle animations.
+3. **Preserve hypothesis input state**
+   - The hypothesis already lives in the shared store, so it should remain when moving from the graph back to the first screen.
+   - I’ll keep that behavior and ensure no transition resets it.
+
+4. **Preserve literature graph state**
+   - Move these currently local graph states into the shared Dexter store:
+     - visited/read node IDs
+     - bookmarked node IDs
+     - selected/open paper
+   - This makes node reads/bookmarks survive when users go to report generation/report view and return.
+
+5. **Preserve report interaction state where useful**
+   - Keep report highlights/annotations local unless you want them preserved when going back to graph and returning to report.
+   - Recommended: preserve them too, because they are user-created edits. I’ll move highlights and active reference state into the store so report selections don’t disappear across navigation.
+
+6. **Adjust plan generation back behavior**
+   - Add a Back button on the generating screen so users can return to the graph while generation is in progress.
+   - If they leave the generating screen, its timers will cleanly stop. Returning to it can restart the generation animation without clearing graph/hypothesis state.
+
+7. **Build verification**
+   - Run the build after changes to catch TypeScript and routing issues.
+
+## Technical notes
+
+- Changes will mainly touch `src/lib/dexter-store.ts` and `src/routes/index.tsx`, with small styling additions in `src/styles.css` if needed.
+- I’ll avoid changing the TanStack route structure since this is an in-app workflow, not separate URL pages.
+- The forward/back buttons will use existing `Button` styling and the current warm industrial theme.

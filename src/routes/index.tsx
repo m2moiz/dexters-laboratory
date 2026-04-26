@@ -7,7 +7,7 @@ import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { useDexterStore } from "@/lib/dexter-store";
+import { type ReportHighlight, useDexterStore } from "@/lib/dexter-store";
 import { exampleHypotheses, type Paper, type PlanSection } from "@/lib/mock-plan";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,6 @@ const pressureColor = (pressure: number) => {
 };
 
 type LassoPoint = { x: number; y: number };
-type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string };
 
 const buildFreehandPath = (points: LassoPoint[], close = false) => {
   if (!points.length) return "";
@@ -215,8 +214,10 @@ function HypothesisInputScreen() {
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
 
   return (
-    <main className={cn(screenClass, "flex items-center justify-center px-6 py-12")}> 
-      <section className="w-full max-w-5xl text-center">
+    <main className={cn(screenClass, "flex min-h-screen flex-col")}> 
+      <WorkflowHeader title="DEXTER / HYPOTHESIS INTAKE" />
+      <section className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-5xl text-center">
         <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-primary">
           DEXTER / HYPOTHESIS INTAKE
         </p>
@@ -254,8 +255,39 @@ function HypothesisInputScreen() {
         >
           GENERATE PLAN
         </Button>
+        </div>
       </section>
     </main>
+  );
+}
+
+function WorkflowHeader({ title, children }: { title?: string; children?: ReactNode }) {
+  return (
+    <header className="flex min-h-[60px] items-center justify-between gap-4 border-b-2 border-industrial bg-background px-5 py-3">
+      <div className="flex min-w-0 items-center gap-4">
+        <WorkflowBackButton />
+        {title && <p className="line-clamp-1 font-mono text-xs font-bold uppercase text-primary">{title}</p>}
+      </div>
+      {children}
+    </header>
+  );
+}
+
+function WorkflowBackButton() {
+  const goToPreviousScreen = useDexterStore((state) => state.goToPreviousScreen);
+  const currentScreen = useDexterStore((state) => state.currentScreen);
+  const canGoBack = currentScreen !== "HYPOTHESIS_INPUT" && currentScreen !== "LOADING";
+
+  if (!canGoBack) return null;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={goToPreviousScreen}
+      className="h-10 shrink-0 rounded-none border-2 border-industrial bg-secondary px-4 font-mono text-xs font-bold uppercase hover:bg-secondary"
+    >
+      Back
+    </Button>
   );
 }
 
@@ -265,6 +297,10 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
+  const visitedNodeIds = useDexterStore((state) => state.visitedNodeIds);
+  const bookmarkedNodeIds = useDexterStore((state) => state.bookmarkedNodeIds);
+  const markNodeVisited = useDexterStore((state) => state.markNodeVisited);
+  const toggleNodeBookmark = useDexterStore((state) => state.toggleNodeBookmark);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
@@ -274,8 +310,6 @@ function LiteratureGraphScreen() {
   const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [hoverCardPosition, setHoverCardPosition] = useState({ x: 0, y: 0 });
-  const [visitedNodeIds, setVisitedNodeIds] = useState<Set<string>>(() => new Set());
-  const [bookmarkedNodeIds, setBookmarkedNodeIds] = useState<Set<string>>(() => new Set());
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
   const selectedPaperId = selectedPaper?.id;
@@ -576,7 +610,7 @@ function LiteratureGraphScreen() {
         simulationRef.current?.alpha(0.14).restart();
       }
       if (pointerDown && !pointerDown.didDrag) {
-        setVisitedNodeIds((current) => new Set(current).add(pointerDown.node.id));
+        markNodeVisited(pointerDown.node.id);
         setHoveredNode(null);
         selectPaper(pointerDown.node.paper);
       }
@@ -594,14 +628,11 @@ function LiteratureGraphScreen() {
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [selectPaper]);
+  }, [markNodeVisited, selectPaper]);
 
   return (
     <main className={screenClass}>
-      <header className="flex h-[60px] items-center justify-between border-b-2 border-industrial bg-background px-5">
-        <p className="line-clamp-1 pr-6 font-mono text-xs font-bold uppercase text-primary">
-          {hypothesis}
-        </p>
+      <WorkflowHeader title={hypothesis}>
         <Button
           type="button"
           onClick={beginPlanGeneration}
@@ -609,7 +640,7 @@ function LiteratureGraphScreen() {
         >
           Continue to Plan
         </Button>
-      </header>
+      </WorkflowHeader>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
         <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
@@ -619,14 +650,7 @@ function LiteratureGraphScreen() {
         <PaperDetailOverlay
           paper={selectedPaper}
           bookmarked={selectedPaper ? bookmarkedNodeIds.has(selectedPaper.id) : false}
-          onToggleBookmark={(paperId) =>
-            setBookmarkedNodeIds((current) => {
-              const next = new Set(current);
-              if (next.has(paperId)) next.delete(paperId);
-              else next.add(paperId);
-              return next;
-            })
-          }
+          onToggleBookmark={toggleNodeBookmark}
           onClose={() => selectPaper(null)}
         />
       </section>
@@ -752,7 +776,9 @@ function PlanGeneratingScreen() {
 
   return (
     <main className={cn(screenClass, "grid min-h-screen grid-cols-1 lg:grid-cols-[60%_40%]")}> 
-      <section className="border-r-2 border-industrial p-8 lg:p-12">
+      <section className="border-r-2 border-industrial">
+        <WorkflowHeader title="DEXTER / GENERATING PLAN" />
+        <div className="p-8 lg:p-12">
         <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-primary">
           DEXTER / GENERATING PLAN
         </p>
@@ -779,6 +805,7 @@ function PlanGeneratingScreen() {
             );
           })}
         </div>
+        </div>
       </section>
       <section className="bg-primary p-8 text-primary-foreground lg:p-12">
         <h2 className="font-display text-4xl font-semibold">Activity feed</h2>
@@ -797,13 +824,15 @@ function PlanGeneratingScreen() {
 function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
+  const highlights = useDexterStore((state) => state.reportHighlights);
+  const setHighlights = useDexterStore((state) => state.setReportHighlights);
+  const activeReference = useDexterStore((state) => state.activeReference);
+  const setActiveReference = useDexterStore((state) => state.setActiveReference);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [highlights, setHighlights] = useState<ReportHighlight[]>([]);
   const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
-  const [activeReference, setActiveReference] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
     active: false,
@@ -1000,7 +1029,8 @@ function PlanViewScreen() {
         setLasso({ active: false, drawing: false, points: [] });
       }}
     >
-      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[1fr_auto] lg:px-8">
+      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[auto_1fr_auto] lg:px-8">
+        <WorkflowBackButton />
         <p className="line-clamp-2 max-w-4xl text-xs leading-5 text-muted-foreground">{hypothesis}</p>
         <div className="grid grid-cols-3 gap-5 text-right">
           {plan.metrics.map((metric) => (
