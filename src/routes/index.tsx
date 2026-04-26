@@ -30,6 +30,21 @@ export const Route = createFileRoute("/")({
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphNodeRadius = (influence: number) => 16 + influence * 15;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
+const easedPressure = (value: number) => value * value * (3 - 2 * value);
+const pressureColor = (pressure: number) => {
+  const stops = [
+    [27, 122, 143],
+    [234, 151, 72],
+    [210, 76, 68],
+    [157, 38, 52],
+  ];
+  const scaled = Math.min(stops.length - 1.001, pressure * (stops.length - 1));
+  const index = Math.floor(scaled);
+  const local = scaled - index;
+  const start = stops[index];
+  const end = stops[index + 1];
+  return start.map((channel, channelIndex) => Math.round(channel + (end[channelIndex] - channel) * local));
+};
 
 type ForceNode = {
   id: string;
@@ -244,17 +259,16 @@ function LiteratureGraphScreen() {
     const visited = visitedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
     const hoverCharge = node.hoverCharge ?? 0;
+    const pressure = easedPressure(hoverCharge);
     const radius = baseRadius * (node.hoverScale ?? 1);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
-    const hoverR = Math.round(27 + (199 - 27) * hoverCharge);
-    const hoverG = Math.round(122 + (62 - 122) * hoverCharge);
-    const hoverB = Math.round(143 + (58 - 143) * hoverCharge);
+    const [hoverR, hoverG, hoverB] = pressureColor(pressure);
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, radius + 8 + breath * 8 + hoverCharge * 10, 0, Math.PI * 2);
-    ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.14 + hoverCharge * 0.18})` : "rgba(27, 122, 143, 0.1)";
+    ctx.arc(x, y, radius + 8 + breath * 8 + pressure * 18, 0, Math.PI * 2);
+    ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.12 + pressure * 0.24})` : "rgba(27, 122, 143, 0.1)";
     ctx.fill();
 
     ctx.beginPath();
@@ -330,8 +344,9 @@ function LiteratureGraphScreen() {
       nodes.forEach((node, index) => {
         const isHovered = node.id === hoveredNode?.id;
         const targetCharge = isHovered ? 1 : 0;
-        node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.018 : 0.12)));
-        node.hoverScale = 1 + (node.hoverCharge ?? 0) * 0.58;
+        node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.012 : 0.1)));
+        const pressure = easedPressure(node.hoverCharge ?? 0);
+        node.hoverScale = 1 + pressure * 0.72;
         if (node !== dragRef.current) {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
@@ -355,12 +370,15 @@ function LiteratureGraphScreen() {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
-          const influence = Math.max(0, 1 - distance / 240) * (hovered.hoverCharge ?? 0);
-          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 0.42;
-          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 0.42;
+          const pressure = easedPressure(hovered.hoverCharge ?? 0);
+          const radius = 270 + pressure * 210;
+          const falloff = Math.max(0, 1 - distance / radius);
+          const influence = falloff * falloff * pressure;
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 1.85;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 1.85;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 115;
