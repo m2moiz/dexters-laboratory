@@ -1,35 +1,33 @@
-I’ll tune the literature graph animation so it feels less like a settled force layout and more like a living, fluid network.
+Plan to update the initial loading screen animation
 
-What typically makes these graphs feel animated:
-- A force simulation for structure: links pull related nodes together, collision prevents overlap, charge pushes nodes apart.
-- Continuous low-level energy: the simulation is kept warm instead of cooling to a stop.
-- Gentle orbital/drift forces: nodes receive tiny changing velocity offsets so they “swim” rather than freeze.
-- Visual motion cues: edge pulses, halos, and subtle particle movement make the network feel alive even when node positions move slowly.
-- Interaction energy: hovering/dragging/clicking briefly increases simulation energy, so the graph reacts physically.
+1. Replace the current “DEXTER” letter reveal
+- Remove the simple text-only loading treatment from the first screen.
+- Replace it with a short animated “lab opening” sequence that still feels native to the app’s current industrial/scientific visual style.
 
-Plan:
-1. Increase the baseline animation energy
-   - Raise the minimum simulation alpha so the graph never fully settles.
-   - Lower velocity damping so nodes retain motion longer.
-   - Increase the sinusoidal/orbital velocity offsets, but keep them bounded so the graph does not fly apart.
+2. Create a Dexter’s Laboratory-inspired homage without copying exact assets
+- Use abstract lab motifs: sliding mechanical doors, teal-blue instrument panels, blinking indicator lights, schematic grid lines, flask/test-tube silhouettes, and a central “DEXTER LABORATORY” lockup.
+- Keep it as a visual homage rather than using copyrighted show artwork or characters.
+- Keep the color language aligned with the app: cream paper background, black industrial outlines, teal-blue primary accents, and restrained red/orange only if needed for tiny indicator lights.
 
-2. Add a more “galaxy-like” flow pattern
-   - Apply a small rotational force around the graph center.
-   - Add per-node phase offsets so every node moves uniquely instead of drifting in lockstep.
-   - Add a weak pull back toward the center so the layout stays visible and fitted.
+3. Make the animation feel like an opening sequence
+- Sequence the motion in stages:
+  - background grid and lab panels fade/slide in
+  - mechanical doors or shutters open
+  - small lab lights blink and instruments pulse
+  - “DEXTER’S LABORATORY” appears as the final title moment
+  - transition smoothly into the hypothesis input screen
+- Maintain the existing automatic transition timing, but likely extend it slightly from ~2s to ~3–3.5s so the opening has enough time to read.
 
-3. Improve perceived motion without breaking readability
-   - Speed up the edge pulse animation.
-   - Add small moving particles along edges, giving the sense that information is flowing through the network.
-   - Add subtle node halos/rings that breathe over time.
+4. Add CSS keyframes/utilities in the existing style system
+- Add custom keyframes in `src/styles.css` for door opening, panel slide, blinking lights, title reveal, scan-line movement, and subtle instrument pulsing.
+- Keep animations CSS-based for smoothness and avoid adding dependencies.
 
-4. Keep viewport fitting stable
-   - Preserve the existing auto-fit transform.
-   - Make the animation more active in graph-space while keeping the whole network inside the canvas.
+5. Update only the loading screen component
+- Modify `LoadingScreen` in `src/routes/index.tsx` to render the new animated lab composition.
+- Preserve the existing store flow so the app still automatically advances to `HYPOTHESIS_INPUT` after the intro.
+- Ensure the design remains responsive for the current preview size and smaller screens.
 
-Technical details:
-- Changes will be contained to `src/routes/index.tsx`.
-- The existing custom canvas + `d3-force` implementation will remain; no new graph library is needed.
-- I’ll adjust the current render loop around lines 301–310, force settings around lines 267–280, and drawing helpers around lines 196–260.
-- I’ll avoid SSR-unsafe imports and keep the app compatible with TanStack Start.
-- After implementation, I’ll run a build check to catch syntax/type issues.
+Technical notes
+- Files to edit: `src/routes/index.tsx` and `src/styles.css`.
+- No new route files or package dependencies are needed.
+- I will verify with a production build after implementation.
