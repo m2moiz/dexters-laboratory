@@ -1,13 +1,13 @@
 import { create } from "zustand";
 
-import { samplePlan, type DexterPlan, type DexterScreen, type Paper } from "./mock-plan";
+import { samplePlan, type ExperimentPlan, type DexterScreen, type Paper } from "./mock-plan";
 
 export type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string; correction?: string };
 
 type DexterState = {
   currentScreen: DexterScreen;
   hypothesis: string;
-  plan: DexterPlan;
+  plan: ExperimentPlan;
   currentlySelectedPaper: Paper | null;
   visitedNodeIds: Set<string>;
   bookmarkedNodeIds: Set<string>;

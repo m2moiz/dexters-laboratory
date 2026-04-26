@@ -1,15 +1,13 @@
-import { type CSSProperties, type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { jsPDF } from "jspdf";
 import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import dexterBeakerLogo from "@/assets/dexter-beaker-logo.jpg";
 import { type ReportHighlight, useDexterStore } from "@/lib/dexter-store";
-import { exampleHypotheses, type Paper, type PlanSection } from "@/lib/mock-plan";
+import { exampleHypotheses, type Paper } from "@/lib/mock-plan";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/")({
@@ -143,51 +141,33 @@ function LoadingScreen() {
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
 
   useEffect(() => {
-    const screenTimer = window.setTimeout(() => setCurrentScreen("HYPOTHESIS_INPUT"), 3400);
-    return () => {
-      window.clearTimeout(screenTimer);
-    };
+    const t = window.setTimeout(() => setCurrentScreen("HYPOTHESIS_INPUT"), 2500);
+    return () => window.clearTimeout(t);
   }, [setCurrentScreen]);
 
+  const letters = "DEXTER".split("");
   return (
-    <main className={cn(screenClass, "dexter-lab-intro relative flex items-center justify-center overflow-hidden px-6")}> 
-      <div className="absolute inset-0 dexter-lab-grid" />
-      <div className="absolute left-8 top-8 hidden w-44 border-2 border-industrial bg-card p-3 dexter-shadow md:block dexter-panel-slide-left">
-        <div className="mb-3 flex gap-2">
-          <span className="h-3 w-3 border-2 border-industrial bg-accent dexter-lab-blink" />
-          <span className="h-3 w-3 border-2 border-industrial bg-primary dexter-lab-blink delay-150" />
-          <span className="h-3 w-3 border-2 border-industrial bg-secondary dexter-lab-blink delay-300" />
-        </div>
-        <div className="space-y-2">
-          <div className="h-2 w-full bg-primary" />
-          <div className="h-2 w-2/3 bg-industrial" />
-          <div className="h-2 w-5/6 bg-primary" />
-        </div>
-      </div>
-      <div className="absolute bottom-10 right-8 hidden w-52 border-2 border-industrial bg-card p-4 dexter-shadow md:block dexter-panel-slide-right">
-        <div className="h-20 border-2 border-industrial bg-background p-3">
-          <div className="h-full w-full border-2 border-primary dexter-scan-field" />
-        </div>
-      </div>
-      <div className="absolute inset-y-0 left-0 w-1/2 border-r-2 border-industrial bg-primary dexter-door-left" />
-      <div className="absolute inset-y-0 right-0 w-1/2 border-l-2 border-industrial bg-primary dexter-door-right" />
-      <section className="relative z-10 w-full max-w-3xl text-center dexter-title-reveal">
-        <div className="dexter-beaker-mark mx-auto mb-7 flex h-40 w-32 items-center justify-center dexter-instrument-pulse" aria-label="Dexter beaker logo">
-          <img src={dexterBeakerLogo} alt="Dexter beaker logo" className="h-full w-full object-contain" />
-        </div>
-        <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-primary">Experiment bay 07</p>
-        <div className="dexter-neon-sign relative mx-auto mt-4 w-fit border-2 border-industrial bg-card px-5 py-4 dexter-shadow md:px-8 md:py-5">
-          <span className="dexter-spark dexter-spark-a" />
-          <span className="dexter-spark dexter-spark-b" />
-          <span className="dexter-spark dexter-spark-c" />
-          <h1 className="dexter-sign-title font-lab-title text-6xl font-normal leading-[0.82] text-primary md:text-[92px]">
-            DEXTER’S<br />LABORATORY
-          </h1>
-        </div>
-        <p className="mx-auto mt-5 max-w-md text-base text-muted-foreground">
+    <main className={cn(screenClass, "flex min-h-screen items-center justify-center px-6")}>
+      <div className="text-center">
+        <h1
+          className="font-display text-7xl font-semibold tracking-tight text-primary md:text-[88px]"
+          style={{ letterSpacing: "-0.02em" }}
+        >
+          {letters.map((ch, i) => (
+            <span
+              key={i}
+              className="dexter-loading-letter inline-block"
+              style={{ animationDelay: `${i * 150}ms` }}
+            >
+              {ch}
+            </span>
+          ))}
+        </h1>
+        <div className="dexter-loading-underline mx-auto mt-3 h-[2px] w-0 bg-primary" />
+        <p className="dexter-loading-tagline mt-6 text-base text-muted-foreground opacity-0">
           From hypothesis to runnable experiment
         </p>
-      </section>
+      </div>
     </main>
   );
 }
@@ -706,6 +686,16 @@ function PaperDetailOverlay({
             {paper.authors} / {paper.year}
           </p>
           <p className="mt-6 text-base leading-7 text-muted-foreground">{paper.abstract}</p>
+          {paper.url && (
+            <a
+              href={paper.url}
+              className="font-mono text-xs text-teal underline mt-4 inline-block"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Open ({paper.source})
+            </a>
+          )}
           <div className="mt-7 grid grid-cols-3 gap-3 font-mono text-xs font-bold uppercase">
             <div className="border-2 border-industrial bg-secondary p-3">Influence<br />{Math.round(paper.influence * 100)}%</div>
             <div className="border-2 border-industrial bg-secondary p-3">Status<br />Reviewed</div>
@@ -765,6 +755,19 @@ function HighlightableText({
   return <>{nodes}</>;
 }
 
+const GENERATING_SECTIONS: { id: string; title: string; label: string; placeholder: string }[] = [
+  { id: "summary", title: "Summary", label: "§ SUMMARY", placeholder: "Summary copy will assemble shortly..." },
+  { id: "novelty", title: "Novelty", label: "§ NOVELTY", placeholder: "Cross-referencing prior literature..." },
+  { id: "assumptions", title: "Assumptions", label: "§ ASSUMPTIONS", placeholder: "Listing operating assumptions..." },
+  { id: "protocol", title: "Protocol", label: "§ PROTOCOL", placeholder: "Drafting step-by-step protocol..." },
+  { id: "materials", title: "Materials", label: "§ MATERIALS", placeholder: "Resolving catalog numbers and pricing..." },
+  { id: "equipment", title: "Equipment", label: "§ EQUIPMENT", placeholder: "Selecting required and optional equipment..." },
+  { id: "budget", title: "Budget", label: "§ BUDGET", placeholder: "Computing line items and overhead..." },
+  { id: "timeline", title: "Timeline", label: "§ TIMELINE", placeholder: "Sequencing phases and milestones..." },
+  { id: "validation", title: "Validation", label: "§ VALIDATION", placeholder: "Defining outcomes, controls, failure modes..." },
+  { id: "sources", title: "Sources", label: "§ SOURCES", placeholder: "Compiling citations and excerpts..." },
+];
+
 function PlanGeneratingScreen() {
   const plan = useDexterStore((state) => state.plan);
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
@@ -782,74 +785,89 @@ function PlanGeneratingScreen() {
   }, [plan.activity.length, setCurrentScreen]);
 
   return (
-    <main className={cn(screenClass, "grid min-h-screen grid-cols-1 lg:grid-cols-[60%_40%]")}> 
-      <section className="border-r-2 border-industrial">
+    <main className={cn(screenClass, "grid min-h-screen grid-cols-1 lg:grid-cols-[60%_40%]")}>
+      <section className="border-r-2 border-ink">
         <WorkflowHeader title="DEXTER / GENERATING PLAN" />
         <div className="p-8 lg:p-12">
-        <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-primary">
-          DEXTER / GENERATING PLAN
-        </p>
-        <h1 className="mt-4 font-display text-5xl font-semibold">Experiment skeleton</h1>
-        <div className="mt-10 space-y-4">
-          {plan.sections.map((section, index) => {
-            const filled = index < visibleItems;
-            return (
-              <Card
-                key={section.id}
-                className={cn(
-                  "dexter-shadow rounded-none border-2 border-industrial p-5",
-                  filled ? "bg-card" : "bg-muted text-muted-foreground",
-                )}
-              >
-                <div className="flex items-center justify-between gap-4">
-                  <h2 className="font-display text-2xl font-semibold">{section.title}</h2>
-                  <span className="font-mono text-xs font-bold uppercase">{section.label}</span>
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-teal">
+            DEXTER / GENERATING PLAN
+          </p>
+          <h1 className="mt-4 font-display text-5xl font-semibold text-ink">Experiment skeleton</h1>
+          <div className="mt-10 space-y-4">
+            {GENERATING_SECTIONS.map((section, index) => {
+              const filled = index < visibleItems;
+              return (
+                <div
+                  key={section.id}
+                  className={cn(
+                    "relative rounded-none p-5 transition-all",
+                    filled
+                      ? "border-2 border-ink bg-cream-100 shadow-card"
+                      : "border-2 border-chrome bg-cream-50 text-concrete",
+                  )}
+                >
+                  <span className="dexter-section-label absolute top-3 right-4">{section.label}</span>
+                  <h2 className="font-display text-2xl font-semibold pr-32">{section.title}</h2>
+                  <p className="mt-3 text-sm leading-6">
+                    {filled ? section.placeholder : "████████████████████ ███████████████ ███████████"}
+                  </p>
                 </div>
-                <p className="mt-4 text-sm leading-6">
-                  {filled ? section.content[0] : "████████████████████ ███████████████ ███████████"}
-                </p>
-              </Card>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         </div>
       </section>
-      <section className="bg-primary p-8 text-primary-foreground lg:p-12">
-        <h2 className="font-display text-4xl font-semibold">Activity feed</h2>
-        <div className="mt-10 space-y-4 font-mono text-sm font-bold uppercase leading-7">
-          {plan.activity.slice(0, visibleItems).map((line) => (
-            <p key={line} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
-              {line}
-            </p>
-          ))}
+      <section className="bg-cream-100 border-l-2 border-ink p-8 lg:p-12">
+        <p className="dexter-section-label">§ LAB-LOG</p>
+        <h2 className="mt-2 font-display text-4xl font-semibold text-ink">Activity feed</h2>
+        <div className="mt-8 space-y-3 font-mono text-xs leading-6 text-ink-grey">
+          {plan.activity.slice(0, visibleItems).map((line) => {
+            const lower = line.toLowerCase();
+            const success = lower.includes("found") || lower.includes("confirmed") || lower.includes("ready") || lower.includes("assembled");
+            return (
+              <p key={line} className="animate-in fade-in slide-in-from-bottom-2 duration-500">
+                {success && <span className="text-success font-bold mr-1">✓</span>}
+                {line}
+              </p>
+            );
+          })}
         </div>
       </section>
     </main>
   );
 }
 
+const PLAN_TOC: { id: string; title: string; label: string }[] = [
+  { id: "summary", title: "Summary", label: "§ SUMMARY" },
+  { id: "novelty", title: "Novelty", label: "§ NOVELTY" },
+  { id: "assumptions", title: "Assumptions", label: "§ ASSUMPTIONS" },
+  { id: "protocol", title: "Protocol", label: "§ PROTOCOL" },
+  { id: "materials", title: "Materials", label: "§ MATERIALS" },
+  { id: "equipment", title: "Equipment", label: "§ EQUIPMENT" },
+  { id: "budget", title: "Budget", label: "§ BUDGET" },
+  { id: "timeline", title: "Timeline", label: "§ TIMELINE" },
+  { id: "validation", title: "Validation", label: "§ VALIDATION" },
+  { id: "sources", title: "Sources", label: "§ SOURCES" },
+];
+
+const BUDGET_CATEGORY_COLORS: Record<string, string> = {
+  reagents: "var(--teal)",
+  consumables: "var(--mustard)",
+  cell_lines: "var(--teal-light)",
+  equipment_time: "var(--ink-grey)",
+  personnel: "var(--success)",
+  overhead: "var(--concrete)",
+  other: "var(--chrome)",
+};
+
 function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
-  const highlights = useDexterStore((state) => state.reportHighlights);
-  const setHighlights = useDexterStore((state) => state.setReportHighlights);
-  const activeReference = useDexterStore((state) => state.activeReference);
-  const setActiveReference = useDexterStore((state) => state.setActiveReference);
-  const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
-  const [selectedText, setSelectedText] = useState("");
-  const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
-  const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string; pinned?: boolean } | null>(null);
-  const [correctionPrompt, setCorrectionPrompt] = useState("");
+  const [activeSection, setActiveSection] = useState<string>(PLAN_TOC[0].id);
+  const [highlightedMaterialId, setHighlightedMaterialId] = useState<string | null>(null);
+  const [hoveredClaimPath, setHoveredClaimPath] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
-  const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
-    active: false,
-    drawing: false,
-    points: [],
-  });
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const reportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -859,119 +877,58 @@ function PlanViewScreen() {
       },
       { rootMargin: "-20% 0px -65% 0px" },
     );
-    plan.sections.forEach((section) => {
+    PLAN_TOC.forEach((section) => {
       const element = sectionRefs.current[section.id];
       if (element) observer.observe(element);
     });
     return () => observer.disconnect();
-  }, [plan.sections]);
+  }, []);
 
-  const referenceFor = (itemId: string) => {
-    const digits = itemId.match(/\d+/g)?.map(Number) ?? [0, 0];
-    const index = (digits[0] + digits[1]) % plan.papers.length;
-    return plan.papers[index];
-  };
+  const claimFor = (fieldPath: string) => plan.claims.find((c) => c.field_path === fieldPath);
+  const sourceFor = (id: string) => plan.sources.find((s) => s.id === id);
+  const materialById = (id: string) => plan.materials.find((m) => m.id === id);
 
-  const captureSelection = () => {
-    const selection = window.getSelection();
-    const text = selection?.toString().trim() ?? "";
-    if (!text) return;
-    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
-    const startElement = range?.startContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
-    const endElement = range?.endContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
-    const element = startElement && startElement === endElement ? startElement : null;
-    const id = element?.dataset.reportId;
-    if (!id || !range) return;
-    const start = textOffsetInElement(element, range.startContainer, range.startOffset);
-    const end = textOffsetInElement(element, range.endContainer, range.endOffset);
-    if (start === end) return;
-    setActiveIds(new Set([id]));
-    const highlightKey = `${id}-${Date.now()}-${highlights.length}`;
-    setHighlights((current) => [...current, { key: highlightKey, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text }]);
-    setSelectedText(text);
-    setActiveHighlightKey(highlightKey);
-    setCorrectionPrompt("");
-    setPromptBox(null);
-    setContextMenu(null);
-    selection?.removeAllRanges();
-  };
-
-  const openContextMenu = (event: React.MouseEvent) => {
-    const target = event.target as HTMLElement;
-    const reportElement = target.closest("[data-report-id]") as HTMLElement | null;
-    const highlightElement = target.closest("[data-highlight-key]") as HTMLElement | null;
-    if (!reportElement && !selectedText) return;
-    event.preventDefault();
-    const id = reportElement?.dataset.reportId;
-    const highlightKey = highlightElement?.dataset.highlightKey ?? null;
-    if (id && !activeIds.has(id)) {
-      setActiveIds(new Set([id]));
-      setSelectedText(highlightKey ? (highlightElement?.innerText.trim() ?? "") : reportElement.innerText.trim());
+  const renderClaimText = (text: string, fieldPath: string) => {
+    const claim = claimFor(fieldPath);
+    if (!claim) return <>{text}</>;
+    if (claim.inferred) {
+      return (
+        <span className="dexter-citation-inferred" title={claim.inferred_rationale}>
+          {text}
+        </span>
+      );
     }
-    setActiveHighlightKey(highlightKey);
-    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null, highlightKey });
-    setPromptBox(null);
+    if (claim.citation_ids.length > 0) {
+      return (
+        <span
+          className="dexter-citation-sourced"
+          onMouseEnter={() => setHoveredClaimPath(fieldPath)}
+          onMouseLeave={() => setHoveredClaimPath(null)}
+        >
+          {text}
+        </span>
+      );
+    }
+    return <>{text}</>;
   };
 
-  const goToReference = () => {
-    const id = [...activeIds][0];
-    if (!id) return;
-    const paper = referenceFor(id);
-    setActiveReference(paper.id);
-    setContextMenu(null);
-    document.getElementById(`reference-${paper.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  };
+  const hoveredSource = (() => {
+    if (!hoveredClaimPath) return null;
+    const claim = claimFor(hoveredClaimPath);
+    if (!claim || !claim.citation_ids.length) return null;
+    return sourceFor(claim.citation_ids[0]) ?? null;
+  })();
 
-  const undoHighlight = () => {
-    if (!contextMenu?.highlightKey) return;
-    setHighlights((current) => current.filter((highlight) => highlight.key !== contextMenu.highlightKey));
-    setActiveIds((current) => {
-      const next = new Set(current);
-      if (contextMenu.targetId) next.delete(contextMenu.targetId);
-      return next;
-    });
-    setContextMenu(null);
-  };
-
-  const startPrompt = (action: string) => {
-    if (!contextMenu) return;
-    setCorrectionPrompt("");
-    setActiveHighlightKey(contextMenu.highlightKey);
-    setPromptBox({ x: contextMenu.x, y: contextMenu.y, action });
-    setContextMenu(null);
-  };
-
-  const queueCorrection = () => {
-    if (!activeHighlightKey || !correctionPrompt.trim()) return;
-    setHighlights((current) =>
-      current.map((highlight) => (highlight.key === activeHighlightKey ? { ...highlight, correction: correctionPrompt.trim() } : highlight)),
-    );
-    setCorrectionPrompt("");
-    setPromptBox(null);
-  };
-
-  const closeTransientPrompt = () => {
-    window.setTimeout(() => {
-      setPromptBox((current) => (current?.pinned ? current : null));
-    }, 80);
-  };
-
-  const openQueuedPrompt = (highlight: ReportHighlight, element: HTMLElement) => {
-    const rect = element.getBoundingClientRect();
-    setSelectedText(highlight.text);
-    setActiveHighlightKey(highlight.key);
-    setCorrectionPrompt(highlight.correction ?? "");
-    setContextMenu(null);
-    setPromptBox({ x: rect.left + rect.width / 2, y: rect.bottom + 12, action: "Edit adjustment", pinned: false });
-  };
+  const noveltyBadge =
+    plan.novelty_check.status === "novel"
+      ? "bg-success text-white"
+      : plan.novelty_check.status === "incremental"
+        ? "bg-mustard text-ink"
+        : "bg-critical text-white";
 
   const downloadReportPdf = async () => {
     if (exportingPdf) return;
     setExportingPdf(true);
-    setContextMenu(null);
-    setPromptBox(null);
-    setLasso({ active: false, drawing: false, points: [] });
-
     try {
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
@@ -979,53 +936,71 @@ function PlanViewScreen() {
       const margin = 18;
       const contentWidth = pageWidth - margin * 2;
       let y = margin;
-
       const addPage = () => {
         pdf.addPage();
-        pdf.setFillColor(253, 248, 231);
+        pdf.setFillColor(252, 247, 236);
         pdf.rect(0, 0, pageWidth, pageHeight, "F");
         y = margin;
       };
-      const ensureSpace = (height: number) => {
-        if (y + height > pageHeight - margin) addPage();
+      const ensureSpace = (h: number) => {
+        if (y + h > pageHeight - margin) addPage();
       };
-      const writeWrapped = (text: string, size: number, lineHeight: number, style: "normal" | "bold" = "normal") => {
+      const writeWrapped = (text: string, size: number, lh: number, style: "normal" | "bold" = "normal") => {
         pdf.setFont("times", style);
         pdf.setFontSize(size);
         const lines = pdf.splitTextToSize(text, contentWidth) as string[];
-        ensureSpace(lines.length * lineHeight + 3);
+        ensureSpace(lines.length * lh + 3);
         pdf.text(lines, margin, y, { baseline: "top" });
-        y += lines.length * lineHeight + 3;
+        y += lines.length * lh + 3;
       };
-
-      pdf.setFillColor(253, 248, 231);
+      pdf.setFillColor(252, 247, 236);
       pdf.rect(0, 0, pageWidth, pageHeight, "F");
-      pdf.setTextColor(30, 29, 25);
-      pdf.setDrawColor(64, 151, 166);
-      pdf.setLineWidth(0.7);
-      pdf.line(margin, margin + 6, pageWidth - margin, margin + 6);
-      y += 14;
+      writeWrapped("Dexter experimental plan", 22, 9, "bold");
+      writeWrapped(hypothesis, 11, 6);
+      writeWrapped(`Duration: ${plan.duration_weeks} weeks  /  Budget: EUR ${plan.budget_total_eur.toLocaleString()}`, 10, 5);
 
-      writeWrapped("Generated experimental report", 10, 5, "bold");
-      writeWrapped("Trehalose cryopreservation feasibility plan", 22, 9, "bold");
-      pdf.setDrawColor(64, 151, 166);
-      pdf.line(margin, y + 1, margin, y + 18);
-      y += 3;
-      writeWrapped(hypothesis, 13, 7);
+      writeWrapped("Summary", 16, 8, "bold");
+      writeWrapped(plan.summary, 11, 6);
 
-      plan.sections.forEach((section) => {
-        y += 5;
-        writeWrapped(section.title, 17, 8, "bold");
-        section.content.forEach((paragraph) => writeWrapped(paragraph, 11, 6));
+      writeWrapped("Novelty", 16, 8, "bold");
+      writeWrapped(`[${plan.novelty_check.status}] ${plan.novelty_check.summary}`, 11, 6);
+
+      writeWrapped("Assumptions", 16, 8, "bold");
+      plan.assumptions.forEach((a) => writeWrapped(`• ${a}`, 11, 6));
+
+      writeWrapped("Protocol", 16, 8, "bold");
+      plan.protocol.steps.forEach((step) => {
+        writeWrapped(`${step.step_number}. ${step.title}`, 12, 6, "bold");
+        writeWrapped(step.description, 10, 5);
       });
 
-      y += 5;
-      writeWrapped("References", 16, 8, "bold");
-      plan.papers.forEach((paper) => writeWrapped(`${paper.id} / ${paper.year} — ${paper.title}`, 10, 5));
+      writeWrapped("Materials", 16, 8, "bold");
+      plan.materials.forEach((m) => {
+        writeWrapped(`${m.id} ${m.name} — ${m.supplier} ${m.catalog_number} — EUR ${m.total_cost_eur}`, 10, 5);
+      });
 
-      y += 4;
-      writeWrapped("Notes", 16, 8, "bold");
-      plan.comments.forEach((item) => writeWrapped(`• ${item}`, 10, 5));
+      writeWrapped("Budget", 16, 8, "bold");
+      plan.budget.lines.forEach((l) => writeWrapped(`${l.category}: ${l.description} — EUR ${l.cost_eur}`, 10, 5));
+      writeWrapped(`Total: EUR ${plan.budget.total_eur.toLocaleString()}`, 12, 6, "bold");
+
+      writeWrapped("Timeline", 16, 8, "bold");
+      plan.timeline.phases.forEach((p) =>
+        writeWrapped(`Phase ${p.phase_number}: ${p.name} (week ${p.start_week}-${p.end_week})`, 10, 5),
+      );
+
+      writeWrapped("Validation", 16, 8, "bold");
+      plan.validation.outcomes.forEach((o) =>
+        writeWrapped(`${o.primary ? "[PRIMARY] " : ""}${o.name}: ${o.threshold}`, 10, 5),
+      );
+      writeWrapped(plan.validation.statistical_design, 10, 5);
+
+      writeWrapped("Sources", 16, 8, "bold");
+      plan.sources.forEach((s) => writeWrapped(`${s.id} ${s.title} (${s.year ?? "n/a"}) — ${s.url}`, 9, 4));
+
+      if (plan.comments.length) {
+        writeWrapped("Notes", 16, 8, "bold");
+        plan.comments.forEach((c) => writeWrapped(`• ${c}`, 10, 5));
+      }
 
       pdf.save("dexter-experimental-report.pdf");
     } finally {
@@ -1033,189 +1008,541 @@ function PlanViewScreen() {
     }
   };
 
-  const lassoPath = buildFreehandPath(lasso.points, lasso.points.length > 2);
+  const sectionCard = (id: string, label: string, title: string, body: ReactNode) => (
+    <section
+      key={id}
+      id={id}
+      ref={(el) => {
+        sectionRefs.current[id] = el;
+      }}
+      className="scroll-mt-32"
+    >
+      <div className="relative border-2 border-ink bg-cream-100 p-6 shadow-card mb-6 rounded-none">
+        <span className="dexter-section-label absolute top-3 right-4">{label}</span>
+        <h2 className="font-display text-2xl font-semibold mb-4 pr-32 text-ink">{title}</h2>
+        {body}
+      </div>
+    </section>
+  );
 
   return (
-    <main
-      className={cn(screenClass, "dexter-report-stage")}
-      onClick={() => setContextMenu(null)}
-      onPointerMove={(event) => {
-        if (lasso.drawing) {
-          setLasso((current) => ({
-            ...current,
-            points: [...current.points, { x: event.clientX, y: event.clientY }],
-          }));
-        }
-      }}
-      onPointerUp={() => {
-        if (!lasso.drawing) return;
-        const picked = [...(reportRef.current?.querySelectorAll<HTMLElement>("[data-report-id]") ?? [])].filter((element) => {
-          const rect = element.getBoundingClientRect();
-          return lassoTouchesRect(lasso.points, rect);
-        });
-        const pickedIds = picked.map((element) => element.dataset.reportId).filter(Boolean) as string[];
-        setActiveIds(new Set(pickedIds));
-        setHighlights((current) => [
-          ...current,
-          ...picked.map((element, index) => {
-            const reportId = element.dataset.reportId ?? `lasso-${index}`;
-            const text = element.innerText.trim();
-            return { key: `${reportId}-lasso-${Date.now()}-${index}`, reportId, start: 0, end: text.length, text };
-          }),
-        ]);
-        setSelectedText(picked.map((element) => element.innerText.trim()).join(" "));
-        setLasso({ active: false, drawing: false, points: [] });
-      }}
-    >
-      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[auto_1fr_auto] lg:px-8">
+    <main className={cn(screenClass, "bg-cream-50 min-h-screen")}>
+      {/* Top banner */}
+      <header className="sticky top-0 z-20 border-b-2 border-ink bg-cream-100 px-8 py-4 min-h-[80px] flex items-center gap-6">
         <WorkflowBackButton />
-        <p className="line-clamp-2 max-w-4xl text-xs leading-5 text-muted-foreground">{hypothesis}</p>
-        <div className="grid grid-cols-3 gap-5 text-right">
-          {plan.metrics.map((metric) => (
-            <strong key={metric} className="font-display text-3xl font-semibold lg:text-4xl">
-              {metric}
-            </strong>
+        <p className="font-mono text-xs text-ink-grey line-clamp-2 flex-1 max-w-[50%] truncate">
+          {hypothesis}
+        </p>
+        <div className="flex gap-8 ml-auto">
+          {[
+            { label: "DURATION", value: `${plan.duration_weeks} weeks` },
+            { label: "BUDGET", value: `EUR ${plan.budget_total_eur.toLocaleString()}` },
+            { label: "PRIMARY OUTCOME", value: plan.primary_outcome_label },
+          ].map((stat) => (
+            <div key={stat.label} className="text-right">
+              <p
+                className="font-mono uppercase text-concrete"
+                style={{ fontSize: "11px", letterSpacing: "0.05em" }}
+              >
+                {stat.label}
+              </p>
+              <p className="font-display font-semibold text-teal" style={{ fontSize: "32px", lineHeight: 1.05 }}>
+                {stat.value}
+              </p>
+            </div>
           ))}
         </div>
       </header>
-      <aside className="dexter-wave-shell" aria-label="Report sections">
-        <nav className="dexter-wave-launcher">
-          {plan.sections.map((section, index) => (
-            <a
-              key={section.id}
-              href={`#${section.id}`}
-              className={cn("dexter-wave-item", activeSection === section.id && "dexter-wave-item-active")}
-              style={{ "--wave-index": index } as CSSProperties}
-            >
-              <span className="dexter-wave-dot" />
-              <span className="dexter-wave-label">{section.title}</span>
-            </a>
-          ))}
-        </nav>
-      </aside>
-      <div className="grid grid-cols-1 gap-8 px-5 py-8 pl-12 lg:grid-cols-[minmax(0,1fr)_24%] lg:px-8 lg:pl-16">
-        <section className="min-w-0">
-          <article
-            ref={reportRef}
-            className={cn("dexter-report-paper", lasso.active && "dexter-lasso-active")}
-            onMouseUp={captureSelection}
-            onContextMenu={openContextMenu}
-            onPointerDown={(event) => {
-              if (!lasso.active) return;
-              event.preventDefault();
-              setLasso({ active: true, drawing: true, points: [{ x: event.clientX, y: event.clientY }] });
-            }}
-          >
-            <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
-            <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
-            <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
-                      <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
-            </p>
-            {plan.sections.map((section, sectionIndex) => (
-              <section
-                key={section.id}
-                id={section.id}
-                ref={(element) => {
-                  sectionRefs.current[section.id] = element;
-                }}
-                className="scroll-mt-28"
+
+      <div className="grid grid-cols-1 lg:grid-cols-[22%_55%_23%] gap-6 px-6 py-8">
+        {/* Left TOC */}
+        <aside className="hidden lg:block">
+          <nav className="sticky top-28 flex flex-col gap-1">
+            <p className="dexter-section-label mb-3">§ TABLE OF CONTENTS</p>
+            {PLAN_TOC.map((s) => (
+              <a
+                key={s.id}
+                href={`#${s.id}`}
+                className={cn(
+                  "px-3 py-2 text-sm font-medium transition-colors",
+                  activeSection === s.id
+                    ? "text-teal font-semibold border-l-2 border-teal"
+                    : "text-ink-grey border-l-2 border-transparent hover:text-ink",
+                )}
               >
-                <h2 className="mt-12 font-display text-3xl font-semibold">{section.title}</h2>
-                {section.content.map((paragraph, paragraphIndex) => {
-                  const itemId = `${sectionIndex}-${paragraphIndex}`;
-                  return (
-                    <p
-                      key={paragraph}
-                      data-report-id={itemId}
-                      className={cn("dexter-report-paragraph", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
+                {s.title}
+              </a>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main column */}
+        <section className="min-w-0">
+          {/* Summary */}
+          {sectionCard(
+            "summary",
+            "§ SUMMARY",
+            "Summary",
+            <p
+              className="font-display text-ink"
+              style={{ fontSize: "22px", lineHeight: 1.5, fontWeight: 500 }}
+            >
+              {renderClaimText(plan.summary, "summary")}
+            </p>,
+          )}
+
+          {/* Novelty */}
+          {sectionCard(
+            "novelty",
+            "§ NOVELTY",
+            "Novelty check",
+            <div>
+              <span
+                className={cn(
+                  "inline-block font-mono text-xs uppercase border border-ink px-2.5 py-1 rounded-none mb-3",
+                  noveltyBadge,
+                )}
+              >
+                {plan.novelty_check.status.replace(/_/g, " ")}
+              </span>
+              <p className="text-base leading-7 text-ink">
+                {renderClaimText(plan.novelty_check.summary, "novelty_check.summary")}
+              </p>
+              {plan.novelty_check.related_paper_ids.length > 0 && (
+                <p className="mt-3 text-sm text-concrete">
+                  Related papers:{" "}
+                  <span className="font-mono">{plan.novelty_check.related_paper_ids.join(", ")}</span>
+                </p>
+              )}
+            </div>,
+          )}
+
+          {/* Assumptions */}
+          {sectionCard(
+            "assumptions",
+            "§ ASSUMPTIONS",
+            "Assumptions",
+            <ul className="space-y-2">
+              {plan.assumptions.map((a, i) => (
+                <li key={i} className="text-base leading-7 text-ink">
+                  <span className="text-concrete mr-2">•</span>
+                  {renderClaimText(a, `assumptions[${i}]`)}
+                </li>
+              ))}
+            </ul>,
+          )}
+
+          {/* Protocol */}
+          {sectionCard(
+            "protocol",
+            "§ PROTOCOL",
+            "Protocol",
+            <div className="space-y-4">
+              {plan.protocol.steps.map((step, idx) => (
+                <div key={step.step_number} className="border border-chrome bg-cream-50 p-4 rounded-none">
+                  <div className="flex gap-4">
+                    <div className="font-mono text-concrete shrink-0" style={{ fontSize: "24px", lineHeight: 1 }}>
+                      {String(step.step_number).padStart(2, "0")}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-lg text-ink">{step.title}</h3>
+                      <p className="text-base text-ink mt-1" style={{ lineHeight: 1.6 }}>
+                        {renderClaimText(step.description, `protocol.steps[${idx}].description`)}
+                      </p>
+                      {step.critical_parameters.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          {step.critical_parameters.map((p, pi) => (
+                            <span
+                              key={pi}
+                              className="font-mono bg-cream-100 border border-ink px-2 py-1 rounded-none"
+                              style={{ fontSize: "11px" }}
+                            >
+                              {p}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {step.warnings.map((w, wi) => (
+                        <div
+                          key={wi}
+                          className="border-l-[3px] border-mustard bg-mustard/10 p-3 mt-2 text-sm text-ink"
+                        >
+                          {w}
+                        </div>
+                      ))}
+                      {step.materials_used.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1">
+                          {step.materials_used.map((mid) => (
+                            <button
+                              key={mid}
+                              type="button"
+                              onClick={() => {
+                                setHighlightedMaterialId(mid);
+                                document
+                                  .getElementById(`material-row-${mid}`)
+                                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                              }}
+                              className="font-mono bg-teal text-white px-2 py-1 text-xs rounded-none hover:bg-teal-dark"
+                            >
+                              {mid}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>,
+          )}
+
+          {/* Materials */}
+          {sectionCard(
+            "materials",
+            "§ MATERIALS",
+            "Materials",
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="border-b-2 border-ink">
+                    {["ID", "Name", "Category", "Supplier", "Catalog #", "Qty", "Unit Cost", "Total"].map((h, i) => (
+                      <th
+                        key={h}
+                        className={cn(
+                          "font-mono uppercase py-2 px-2",
+                          i >= 5 ? "text-right" : "text-left",
+                        )}
+                        style={{ fontSize: "11px" }}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {plan.materials.map((m) => (
+                    <tr
+                      key={m.id}
+                      id={`material-row-${m.id}`}
+                      className={cn(
+                        "border-b border-chrome hover:bg-teal/5 transition-colors",
+                        highlightedMaterialId === m.id && "bg-teal/10",
+                      )}
                     >
-                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
-                    </p>
+                      <td className="py-3 px-2 font-mono text-xs">{m.id}</td>
+                      <td className="py-3 px-2">{m.name}</td>
+                      <td className="py-3 px-2 font-mono text-xs text-concrete">{m.category}</td>
+                      <td className="py-3 px-2 font-mono text-xs">{m.supplier}</td>
+                      <td className="py-3 px-2 font-mono text-xs">{m.catalog_number}</td>
+                      <td className="py-3 px-2 text-right font-mono text-xs">{m.quantity}</td>
+                      <td className="py-3 px-2 text-right font-mono">€{m.unit_cost_eur}</td>
+                      <td className="py-3 px-2 text-right font-mono font-semibold">€{m.total_cost_eur}</td>
+                    </tr>
+                  ))}
+                  <tr className="border-t-2 border-ink font-bold">
+                    <td colSpan={7} className="py-3 px-2 text-right font-mono uppercase text-xs">
+                      Total
+                    </td>
+                    <td className="py-3 px-2 text-right font-mono">
+                      €{plan.materials.reduce((sum, m) => sum + m.total_cost_eur, 0).toLocaleString()}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>,
+          )}
+
+          {/* Equipment */}
+          {sectionCard(
+            "equipment",
+            "§ EQUIPMENT",
+            "Equipment",
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h3 className="font-mono text-xs uppercase text-concrete mb-3">▪ Required</h3>
+                <ul className="space-y-2">
+                  {plan.equipment
+                    .filter((e) => e.required)
+                    .map((e, i) => (
+                      <li key={i} className="text-sm text-ink">
+                        <span className="font-medium">{e.name}</span>
+                        {e.notes && <span className="block text-xs text-concrete mt-0.5">{e.notes}</span>}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-mono text-xs uppercase text-concrete mb-3">▫ Nice-to-have</h3>
+                <ul className="space-y-2">
+                  {plan.equipment
+                    .filter((e) => !e.required)
+                    .map((e, i) => (
+                      <li key={i} className="text-sm text-ink">
+                        <span className="font-medium">{e.name}</span>
+                        {e.notes && <span className="block text-xs text-concrete mt-0.5">{e.notes}</span>}
+                      </li>
+                    ))}
+                </ul>
+              </div>
+            </div>,
+          )}
+
+          {/* Budget */}
+          {sectionCard(
+            "budget",
+            "§ BUDGET",
+            "Budget",
+            <div>
+              <div className="flex h-8 border-2 border-ink mb-4 overflow-hidden">
+                {plan.budget.lines.map((l, i) => {
+                  const pct = (l.cost_eur / plan.budget.total_eur) * 100;
+                  return (
+                    <div
+                      key={i}
+                      title={`${l.category}: €${l.cost_eur}`}
+                      style={{
+                        width: `${pct}%`,
+                        backgroundColor: BUDGET_CATEGORY_COLORS[l.category] ?? "var(--chrome)",
+                      }}
+                    />
                   );
                 })}
-              </section>
-            ))}
-            <Button
-              type="button"
-              onClick={downloadReportPdf}
-              disabled={exportingPdf}
-              data-pdf-exclude="true"
-              className="dexter-cta-shadow mt-12 h-16 w-full rounded-none border-2 border-industrial bg-accent font-mono text-base font-bold uppercase text-accent-foreground hover:bg-accent hover:shadow-[8px_8px_0px_var(--industrial)]"
-            >
-              {exportingPdf ? "PREPARING PDF..." : "I'M HAPPY WITH THIS"}
-            </Button>
-          </article>
-        </section>
-        <aside className="space-y-6 lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)] lg:overflow-auto">
-          <section className="dexter-reference-panel">
-            <h2 className="font-mono text-xs font-bold uppercase text-primary">References</h2>
-            <div className="mt-4 space-y-3">
-              {plan.papers.map((paper) => (
-                <button key={paper.id} id={`reference-${paper.id}`} type="button" onClick={() => setActiveReference(paper.id)} className={cn("w-full border-l-4 bg-secondary p-3 text-left text-sm leading-5 transition-colors", activeReference === paper.id ? "border-primary" : "border-transparent")}>
-                  <span className="font-mono text-[10px] font-bold uppercase text-primary">{paper.id} / {paper.year}</span>
-                  <span className="mt-1 block font-medium">{paper.title}</span>
-                </button>
+              </div>
+              <table className="w-full text-sm">
+                <tbody>
+                  {plan.budget.lines.map((l, i) => (
+                    <tr key={i} className="border-b border-chrome">
+                      <td className="py-2 font-mono text-xs uppercase text-concrete w-40">{l.category}</td>
+                      <td className="py-2 text-ink">{l.description}</td>
+                      <td className="py-2 text-right font-mono">€{l.cost_eur.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p
+                className="mt-4 font-display text-critical text-right"
+                style={{ fontSize: "36px", fontWeight: 600 }}
+              >
+                €{plan.budget.total_eur.toLocaleString()}
+              </p>
+              <p className="text-xs text-concrete text-right">
+                Includes {plan.budget.contingency_pct}% overhead
+              </p>
+            </div>,
+          )}
+
+          {/* Timeline */}
+          {sectionCard(
+            "timeline",
+            "§ TIMELINE",
+            "Timeline",
+            <div className="space-y-2">
+              {plan.timeline.phases.map((p) => {
+                const widthPct = ((p.end_week - p.start_week + 1) / plan.timeline.total_weeks) * 100;
+                const leftPct = ((p.start_week - 1) / plan.timeline.total_weeks) * 100;
+                return (
+                  <div key={p.phase_number} className="flex items-center gap-3">
+                    <div
+                      className="font-mono text-xs text-concrete shrink-0 text-right"
+                      style={{ width: "20px" }}
+                    >
+                      {p.phase_number}
+                    </div>
+                    <div className="font-medium text-sm shrink-0" style={{ width: "180px" }}>
+                      {p.name}
+                    </div>
+                    <div className="relative flex-1 h-6 bg-cream-50 border border-chrome">
+                      <div
+                        className="absolute h-full bg-teal flex items-center px-2 text-white text-xs font-mono"
+                        style={{ left: `${leftPct}%`, width: `${widthPct}%` }}
+                      >
+                        wk {p.start_week}-{p.end_week}
+                      </div>
+                      {p.milestones.length > 0 && (
+                        <span
+                          className="absolute -right-4 top-1/2 -translate-y-1/2 text-mustard"
+                          title={p.milestones.join(" / ")}
+                        >
+                          ▶
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+              <p className="text-xs text-concrete mt-3 font-mono">
+                Total {plan.timeline.total_weeks} weeks
+              </p>
+            </div>,
+          )}
+
+          {/* Validation */}
+          {sectionCard(
+            "validation",
+            "§ VALIDATION",
+            "Validation",
+            <div className="space-y-5">
+              {(() => {
+                const primary = plan.validation.outcomes.find((o) => o.primary);
+                const secondaries = plan.validation.outcomes.filter((o) => !o.primary);
+                return (
+                  <>
+                    {primary && (
+                      <div className="border-2 border-ink bg-cream-50 p-4">
+                        <p className="dexter-section-label mb-2">PRIMARY OUTCOME</p>
+                        <h4 className="font-display text-xl font-semibold text-ink">{primary.name}</h4>
+                        <p className="mt-2 text-sm text-ink-grey">
+                          <span className="font-mono text-xs uppercase text-concrete">measurement: </span>
+                          {primary.measurement}
+                        </p>
+                        <p className="mt-1 text-sm text-ink-grey">
+                          <span className="font-mono text-xs uppercase text-concrete">threshold: </span>
+                          {primary.threshold}
+                        </p>
+                      </div>
+                    )}
+                    {secondaries.length > 0 && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {secondaries.map((o, i) => (
+                          <div key={i} className="border border-chrome bg-cream-50 p-3">
+                            <h4 className="font-semibold text-sm text-ink">{o.name}</h4>
+                            <p className="mt-1 text-xs text-ink-grey">{o.measurement}</p>
+                            <p className="mt-1 text-xs text-concrete font-mono">{o.threshold}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+              <div>
+                <h3 className="font-mono text-xs uppercase text-concrete mb-2">Controls</h3>
+                <ul className="space-y-1 text-sm">
+                  {plan.validation.controls.map((c, i) => (
+                    <li key={i}>
+                      <span className="font-medium text-ink">{c.name}</span>
+                      <span className="text-ink-grey"> — {c.rationale}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h3 className="font-mono text-xs uppercase text-concrete mb-2">Failure modes</h3>
+                <ul className="space-y-1 text-sm">
+                  {plan.validation.failure_modes.map((f, i) => (
+                    <li key={i}>
+                      <span className="font-medium text-ink">{f.description}</span>
+                      <span className="text-ink-grey"> — {f.mitigation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <p className="italic text-sm text-ink-grey">{plan.validation.statistical_design}</p>
+            </div>,
+          )}
+
+          {/* Sources */}
+          {sectionCard(
+            "sources",
+            "§ SOURCES",
+            "Sources",
+            <ul className="space-y-4">
+              {plan.sources.map((s) => (
+                <li key={s.id} className="border-l-2 border-chrome pl-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-mono text-[10px] uppercase border border-ink px-1.5 py-0.5">
+                      {s.kind}
+                    </span>
+                    <span className="font-mono text-xs text-concrete">{s.id}</span>
+                  </div>
+                  <p className="font-medium text-ink">{s.title}</p>
+                  <p className="text-sm text-concrete">
+                    {s.authors} {s.year ? `· ${s.year}` : ""}
+                  </p>
+                  <a
+                    href={s.url}
+                    className="font-mono text-xs text-teal underline break-all"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {s.url}
+                  </a>
+                  <p className="italic text-sm text-ink-grey mt-1">{s.excerpt}</p>
+                </li>
               ))}
-            </div>
-          </section>
-          <section className="dexter-reference-panel">
-            <h2 className="font-mono text-xs font-bold uppercase text-primary">Notes</h2>
-            <ul className="mt-4 space-y-3 text-sm leading-6">
-              {plan.comments.map((item) => <li key={item}>{item}</li>)}
+            </ul>,
+          )}
+
+          {/* CTA */}
+          <Button
+            type="button"
+            onClick={downloadReportPdf}
+            disabled={exportingPdf}
+            className="mt-8 h-16 w-full rounded-none border-2 border-ink bg-critical text-white font-mono text-base font-bold uppercase shadow-button hover:shadow-card hover:-translate-x-px hover:-translate-y-px transition-all"
+          >
+            {exportingPdf ? "PREPARING PDF..." : "I'M HAPPY WITH THIS"}
+          </Button>
+        </section>
+
+        {/* Right panel */}
+        <aside className="hidden lg:block">
+          <div className="sticky top-28 lg:h-[calc(100vh-8rem)] overflow-auto pr-2">
+            <p className="dexter-section-label mb-3">§ CITATIONS</p>
+            <p className="text-sm text-concrete mb-4">
+              Hover any underlined text to see its source.
+            </p>
+            {hoveredSource ? (
+              <div className="border-2 border-ink bg-cream-100 p-4 shadow-card mb-6 rounded-none">
+                <p className="font-mono text-[10px] uppercase text-concrete mb-1">
+                  {hoveredSource.kind} · {hoveredSource.id}
+                </p>
+                <p className="font-medium text-ink text-sm">{hoveredSource.title}</p>
+                <p className="text-xs text-concrete mt-1">
+                  {hoveredSource.authors} {hoveredSource.year ? `· ${hoveredSource.year}` : ""}
+                </p>
+                <a
+                  href={hoveredSource.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-mono text-[11px] text-teal underline break-all block mt-2"
+                >
+                  {hoveredSource.url}
+                </a>
+                <p className="italic text-xs text-ink-grey mt-2">{hoveredSource.excerpt}</p>
+              </div>
+            ) : (
+              <div className="border border-chrome bg-cream-50 p-4 mb-6 text-xs text-concrete">
+                No citation focused.
+              </div>
+            )}
+
+            {highlightedMaterialId && (
+              <div className="border-2 border-teal bg-cream-50 p-3 mb-6">
+                <p className="dexter-section-label mb-1">FOCUSED MATERIAL</p>
+                <p className="text-sm font-medium">
+                  {materialById(highlightedMaterialId)?.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setHighlightedMaterialId(null)}
+                  className="mt-2 font-mono text-[10px] text-teal underline"
+                >
+                  clear focus
+                </button>
+              </div>
+            )}
+
+            <p className="dexter-section-label mb-2">§ NOTES</p>
+            <ul className="space-y-3 text-sm">
+              {plan.comments.map((c, i) => (
+                <li key={i} className="border-l-2 border-chrome pl-3 text-ink-grey">
+                  {c}
+                </li>
+              ))}
             </ul>
-          </section>
+          </div>
         </aside>
       </div>
-      {contextMenu && (
-        <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
-          {contextMenu.highlightKey && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
-          {contextMenu.highlightKey && <button type="button" onClick={() => startPrompt("Make adjustment")}>Make adjustment</button>}
-          <button type="button" onClick={goToReference}>Go to reference</button>
-          <button type="button" onClick={() => { setLasso((current) => ({ ...current, active: true })); setContextMenu(null); }}>Lasso select region</button>
-        </div>
-      )}
-      {promptBox && (
-        <div
-          className="dexter-edit-prompt"
-          style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }}
-          onMouseEnter={() => setPromptBox((current) => (current ? { ...current, pinned: true } : current))}
-          onClick={(event) => {
-            event.stopPropagation();
-            setPromptBox((current) => (current ? { ...current, pinned: true } : current));
-          }}
-        >
-          <p className="font-mono text-[10px] font-bold uppercase text-primary">{promptBox.action}</p>
-          <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">“{selectedText}”</p>
-          <Textarea
-            rows={4}
-            value={correctionPrompt}
-            onChange={(event) => setCorrectionPrompt(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && !event.shiftKey) {
-                event.preventDefault();
-                queueCorrection();
-              }
-            }}
-            autoFocus
-            placeholder="Tell Dexter exactly how to revise this passage..."
-            className="mt-3 rounded-none border-2 border-industrial bg-background text-sm"
-          />
-            <Button
-              type="button"
-              onClick={queueCorrection}
-              disabled={!correctionPrompt.trim()}
-              className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary disabled:opacity-50"
-            >
-            Queue correction
-          </Button>
-        </div>
-      )}
-      {lasso.drawing && (
-        <svg className="dexter-lasso-svg" aria-hidden="true">
-          <path className="dexter-lasso-fill" d={lassoPath} />
-          <path className="dexter-lasso-stroke" d={lassoPath} />
-        </svg>
-      )}
     </main>
   );
 }

@@ -64,6 +64,26 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Dexter brand palette — Tailwind v4 utility aliases */
+  --color-teal: var(--teal);
+  --color-teal-dark: var(--teal-dark);
+  --color-teal-light: var(--teal-light);
+  --color-red: var(--red);
+  --color-mustard: var(--mustard);
+  --color-cream-50: var(--cream-50);
+  --color-cream-100: var(--cream-100);
+  --color-chrome: var(--chrome);
+  --color-ink: var(--ink);
+  --color-ink-grey: var(--ink-grey);
+  --color-concrete: var(--concrete);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-critical: var(--critical);
+  --color-inferred: var(--inferred);
+  --shadow-card: var(--shadow-card);
+  --shadow-button: var(--shadow-button);
+  --shadow-hover: var(--shadow-hover);
 }
 
 :root {
@@ -104,6 +124,42 @@
   --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
   --sidebar-border: oklch(0.929 0.013 255.508);
   --sidebar-ring: oklch(0.704 0.04 256.788);
+
+  /* Dexter brand palette — named brand tokens (locked design system) */
+  /* Brand */
+  --teal:        #1B7A8F;
+  --teal-dark:   #0F4A57;
+  --teal-light:  #4FA8B8;
+
+  /* Accents — use red SPARINGLY */
+  --red:         #C73E3A;
+  --mustard:     #D4A22C;
+
+  /* Surfaces */
+  --cream-50:    #FCF7EC;   /* default page background */
+  --cream-100:   #F5E6C8;   /* raised cards */
+  --chrome:      #C8C5BD;   /* dividers, borders */
+
+  /* Ink */
+  --ink:         #1A1A1A;
+  --ink-grey:    #4A4A4A;
+  --concrete:    #8B8680;
+
+  /* Functional */
+  --success:     #2E7D4F;
+  --warning:     #D4A22C;
+  --critical:    #C73E3A;
+  --inferred:    #8B8680;
+
+  /* Borders */
+  --border-thin:  1px solid var(--chrome);
+  --border-bold:  2px solid var(--ink);
+  --border-heavy: 3px solid var(--ink);
+
+  /* Hard offset shadows — never blur */
+  --shadow-card:   4px 4px 0px var(--ink);
+  --shadow-button: 3px 3px 0px var(--ink);
+  --shadow-hover:  5px 5px 0px var(--ink);
 }
 
 .dark {
@@ -601,6 +657,53 @@
     right: 28%;
     animation: dexter-spark-jump 480ms steps(3, end) 2050ms both;
   }
+
+  /* Dexter citation underlines — sourced vs inferred claims */
+  .dexter-citation-sourced {
+    text-decoration: underline;
+    text-decoration-color: var(--teal);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    cursor: help;
+  }
+  .dexter-citation-inferred {
+    text-decoration: underline dotted;
+    text-decoration-color: var(--concrete);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.18em;
+    cursor: help;
+  }
+  .dexter-section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--concrete);
+  }
+
+  .dexter-loading-letter {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: dexter-loading-letter-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .dexter-loading-underline {
+    animation: dexter-loading-underline-in 260ms cubic-bezier(0.22, 1, 0.36, 1) 1100ms both;
+  }
+  .dexter-loading-tagline {
+    animation: dexter-loading-tagline-in 360ms ease-out 1400ms both;
+  }
+}
+
+@keyframes dexter-loading-letter-in {
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes dexter-loading-underline-in {
+  from { width: 0; }
+  to { width: 6.5rem; }
+}
+@keyframes dexter-loading-tagline-in {
+  to { opacity: 1; }
 }
 
 @keyframes dexter-grid-wake {
