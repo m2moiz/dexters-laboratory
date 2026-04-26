@@ -406,7 +406,7 @@ function LiteratureGraphScreen() {
           node.vy = (node.vy ?? 0) + (dy / distance) * influence * 3.2;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.34 : 0.16)).tick(2);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.1)).tick(1);
       const padding = Math.max(34, Math.min(graphSize.width, graphSize.height) * 0.055);
       const nodeExtents = nodes.map((node) => {
         const visualRadius = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + (bookmarkedNodeIds.has(node.id) ? 24 : 14);
