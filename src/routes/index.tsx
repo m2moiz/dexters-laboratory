@@ -39,6 +39,7 @@ type ForceNode = {
   val: number;
   phase: number;
   hoverScale?: number;
+  hoverCharge?: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -242,14 +243,18 @@ function LiteratureGraphScreen() {
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
+    const hoverCharge = node.hoverCharge ?? 0;
     const radius = baseRadius * (node.hoverScale ?? 1);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
+    const hoverR = Math.round(27 + (199 - 27) * hoverCharge);
+    const hoverG = Math.round(122 + (62 - 122) * hoverCharge);
+    const hoverB = Math.round(143 + (58 - 143) * hoverCharge);
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(x, y, radius + 8 + breath * 8, 0, Math.PI * 2);
-    ctx.fillStyle = hovered || selected ? "rgba(199, 62, 58, 0.14)" : "rgba(27, 122, 143, 0.1)";
+    ctx.arc(x, y, radius + 8 + breath * 8 + hoverCharge * 10, 0, Math.PI * 2);
+    ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.14 + hoverCharge * 0.18})` : "rgba(27, 122, 143, 0.1)";
     ctx.fill();
 
     ctx.beginPath();
@@ -259,7 +264,7 @@ function LiteratureGraphScreen() {
 
     ctx.beginPath();
     ctx.arc(x, y, radius + (hovered ? 3 : 0), 0, Math.PI * 2);
-    ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : visited ? "#B9B4AA" : "#FFFDF6";
+    ctx.fillStyle = selected ? "#C73E3A" : hovered ? `rgb(${hoverR}, ${hoverG}, ${hoverB})` : visited ? "#B9B4AA" : "#FFFDF6";
     ctx.fill();
     ctx.globalAlpha = visited && !selected && !hovered ? 0.74 : 1;
     ctx.lineWidth = selected || hovered ? 4 : 3;
