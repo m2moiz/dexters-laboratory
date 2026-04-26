@@ -292,6 +292,10 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
+  const visitedNodeIds = useDexterStore((state) => state.visitedNodeIds);
+  const bookmarkedNodeIds = useDexterStore((state) => state.bookmarkedNodeIds);
+  const markNodeVisited = useDexterStore((state) => state.markNodeVisited);
+  const toggleNodeBookmark = useDexterStore((state) => state.toggleNodeBookmark);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const simulationRef = useRef<ReturnType<typeof forceSimulation<ForceNode>> | null>(null);
   const transformRef = useRef({ scale: 1, x: 0, y: 0 });
@@ -301,8 +305,6 @@ function LiteratureGraphScreen() {
   const linksRef = useRef<ForceLink[]>([]);
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [hoverCardPosition, setHoverCardPosition] = useState({ x: 0, y: 0 });
-  const [visitedNodeIds, setVisitedNodeIds] = useState<Set<string>>(() => new Set());
-  const [bookmarkedNodeIds, setBookmarkedNodeIds] = useState<Set<string>>(() => new Set());
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
   const selectedPaperId = selectedPaper?.id;
@@ -603,7 +605,7 @@ function LiteratureGraphScreen() {
         simulationRef.current?.alpha(0.14).restart();
       }
       if (pointerDown && !pointerDown.didDrag) {
-        setVisitedNodeIds((current) => new Set(current).add(pointerDown.node.id));
+        markNodeVisited(pointerDown.node.id);
         setHoveredNode(null);
         selectPaper(pointerDown.node.paper);
       }
@@ -621,14 +623,11 @@ function LiteratureGraphScreen() {
       canvas.removeEventListener("pointerup", onPointerUp);
       canvas.removeEventListener("pointerleave", onPointerUp);
     };
-  }, [selectPaper]);
+  }, [markNodeVisited, selectPaper]);
 
   return (
     <main className={screenClass}>
-      <header className="flex h-[60px] items-center justify-between border-b-2 border-industrial bg-background px-5">
-        <p className="line-clamp-1 pr-6 font-mono text-xs font-bold uppercase text-primary">
-          {hypothesis}
-        </p>
+      <WorkflowHeader title={hypothesis}>
         <Button
           type="button"
           onClick={beginPlanGeneration}
@@ -636,7 +635,7 @@ function LiteratureGraphScreen() {
         >
           Continue to Plan
         </Button>
-      </header>
+      </WorkflowHeader>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
         <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
@@ -646,14 +645,7 @@ function LiteratureGraphScreen() {
         <PaperDetailOverlay
           paper={selectedPaper}
           bookmarked={selectedPaper ? bookmarkedNodeIds.has(selectedPaper.id) : false}
-          onToggleBookmark={(paperId) =>
-            setBookmarkedNodeIds((current) => {
-              const next = new Set(current);
-              if (next.has(paperId)) next.delete(paperId);
-              else next.add(paperId);
-              return next;
-            })
-          }
+          onToggleBookmark={toggleNodeBookmark}
           onClose={() => selectPaper(null)}
         />
       </section>
