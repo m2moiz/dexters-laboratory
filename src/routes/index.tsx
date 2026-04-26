@@ -1030,7 +1030,7 @@ function PlanViewScreen() {
       }}
     >
       <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[auto_1fr_auto] lg:px-8">
-        <WorkflowHeader />
+        <WorkflowBackButton />
         <p className="line-clamp-2 max-w-4xl text-xs leading-5 text-muted-foreground">{hypothesis}</p>
         <div className="grid grid-cols-3 gap-5 text-right">
           {plan.metrics.map((metric) => (
