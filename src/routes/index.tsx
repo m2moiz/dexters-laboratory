@@ -214,8 +214,10 @@ function HypothesisInputScreen() {
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
 
   return (
-    <main className={cn(screenClass, "flex items-center justify-center px-6 py-12")}> 
-      <section className="w-full max-w-5xl text-center">
+    <main className={cn(screenClass, "flex min-h-screen flex-col")}> 
+      <WorkflowHeader title="DEXTER / HYPOTHESIS INTAKE" />
+      <section className="flex flex-1 items-center justify-center px-6 py-12">
+        <div className="w-full max-w-5xl text-center">
         <p className="font-mono text-xs font-bold uppercase tracking-[0.24em] text-primary">
           DEXTER / HYPOTHESIS INTAKE
         </p>
@@ -253,8 +255,34 @@ function HypothesisInputScreen() {
         >
           GENERATE PLAN
         </Button>
+        </div>
       </section>
     </main>
+  );
+}
+
+function WorkflowHeader({ title, children }: { title?: string; children?: ReactNode }) {
+  const goToPreviousScreen = useDexterStore((state) => state.goToPreviousScreen);
+  const currentScreen = useDexterStore((state) => state.currentScreen);
+  const canGoBack = currentScreen !== "HYPOTHESIS_INPUT" && currentScreen !== "LOADING";
+
+  return (
+    <header className="flex min-h-[60px] items-center justify-between gap-4 border-b-2 border-industrial bg-background px-5 py-3">
+      <div className="flex min-w-0 items-center gap-4">
+        {canGoBack && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={goToPreviousScreen}
+            className="h-10 shrink-0 rounded-none border-2 border-industrial bg-secondary px-4 font-mono text-xs font-bold uppercase hover:bg-secondary"
+          >
+            Back
+          </Button>
+        )}
+        {title && <p className="line-clamp-1 font-mono text-xs font-bold uppercase text-primary">{title}</p>}
+      </div>
+      {children}
+    </header>
   );
 }
 
