@@ -1,6 +1,8 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import html2canvas from "html2canvas";
+import { jsPDF } from "jspdf";
 import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -803,6 +805,7 @@ function PlanViewScreen() {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
   const [activeReference, setActiveReference] = useState<string | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
     active: false,
     drawing: false,
@@ -894,6 +897,48 @@ function PlanViewScreen() {
     if (!contextMenu) return;
     setPromptBox({ x: contextMenu.x, y: contextMenu.y, action });
     setContextMenu(null);
+  };
+
+  const downloadReportPdf = async () => {
+    const reportElement = reportRef.current;
+    if (!reportElement || exportingPdf) return;
+    setExportingPdf(true);
+    setContextMenu(null);
+    setPromptBox(null);
+    setLasso({ active: false, drawing: false, points: [] });
+
+    try {
+      await new Promise((resolve) => window.requestAnimationFrame(resolve));
+      const canvas = await html2canvas(reportElement, {
+        backgroundColor: getComputedStyle(reportElement).backgroundColor,
+        scale: Math.min(window.devicePixelRatio || 1, 2),
+        useCORS: true,
+        logging: false,
+        ignoreElements: (element) => element instanceof HTMLElement && element.dataset.pdfExclude === "true",
+      });
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      const imageWidth = pageWidth - margin * 2;
+      const imageHeight = (canvas.height * imageWidth) / canvas.width;
+      const imageData = canvas.toDataURL("image/png");
+
+      let position = margin;
+      pdf.addImage(imageData, "PNG", margin, position, imageWidth, imageHeight);
+      let remainingHeight = imageHeight - (pageHeight - margin * 2);
+
+      while (remainingHeight > 0) {
+        pdf.addPage();
+        position = margin - (imageHeight - remainingHeight);
+        pdf.addImage(imageData, "PNG", margin, position, imageWidth, imageHeight);
+        remainingHeight -= pageHeight - margin * 2;
+      }
+
+      pdf.save("dexter-experimental-report.pdf");
+    } finally {
+      setExportingPdf(false);
+    }
   };
 
   const lassoPath = buildFreehandPath(lasso.points, lasso.points.length > 2);
@@ -990,8 +1035,14 @@ function PlanViewScreen() {
                 })}
               </section>
             ))}
-            <Button className="dexter-cta-shadow mt-12 h-16 w-full rounded-none border-2 border-industrial bg-accent font-mono text-base font-bold uppercase text-accent-foreground hover:bg-accent hover:shadow-[8px_8px_0px_var(--industrial)]">
-              I'M HAPPY WITH THIS
+            <Button
+              type="button"
+              onClick={downloadReportPdf}
+              disabled={exportingPdf}
+              data-pdf-exclude="true"
+              className="dexter-cta-shadow mt-12 h-16 w-full rounded-none border-2 border-industrial bg-accent font-mono text-base font-bold uppercase text-accent-foreground hover:bg-accent hover:shadow-[8px_8px_0px_var(--industrial)]"
+            >
+              {exportingPdf ? "PREPARING PDF..." : "I'M HAPPY WITH THIS"}
             </Button>
           </article>
         </section>
