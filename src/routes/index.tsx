@@ -733,7 +733,17 @@ function PaperDetailOverlay({
   );
 }
 
-function HighlightableText({ text, reportId, highlights }: { text: string; reportId: string; highlights: ReportHighlight[] }) {
+function HighlightableText({
+  text,
+  reportId,
+  highlights,
+  onQueuedHover,
+}: {
+  text: string;
+  reportId: string;
+  highlights: ReportHighlight[];
+  onQueuedHover?: (highlight: ReportHighlight, element: HTMLElement) => void;
+}) {
   const sortedHighlights = [...highlights]
     .filter((highlight) => highlight.reportId === reportId)
     .sort((a, b) => a.start - b.start);
@@ -751,6 +761,9 @@ function HighlightableText({ text, reportId, highlights }: { text: string; repor
           key={highlight.key}
           className={cn("dexter-report-selected", highlight.correction && "dexter-report-queued")}
           data-highlight-key={highlight.key}
+          onMouseEnter={(event) => {
+            if (highlight.correction) onQueuedHover?.(highlight, event.currentTarget);
+          }}
           title={highlight.correction ? `Queued correction: ${highlight.correction}` : undefined}
         >
           {text.slice(start, end)}
