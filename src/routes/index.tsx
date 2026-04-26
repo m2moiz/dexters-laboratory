@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -182,6 +183,7 @@ function LiteratureGraphScreen() {
   const [hoveredNode, setHoveredNode] = useState<ForceNode | null>(null);
   const [hoverCardPosition, setHoverCardPosition] = useState({ x: 0, y: 0 });
   const [visitedNodeIds, setVisitedNodeIds] = useState<Set<string>>(() => new Set());
+  const [bookmarkedNodeIds, setBookmarkedNodeIds] = useState<Set<string>>(() => new Set());
   const [graphSize, setGraphSize] = useState({ width: 1200, height: 720 });
   const graphWrapRef = useRef<HTMLDivElement | null>(null);
   const selectedPaperId = selectedPaper?.id;
@@ -256,6 +258,7 @@ function LiteratureGraphScreen() {
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
+    const bookmarked = bookmarkedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
     const hoverCharge = node.hoverCharge ?? 0;
     const pressure = easedPressure(hoverCharge);
@@ -265,6 +268,15 @@ function LiteratureGraphScreen() {
     const [hoverR, hoverG, hoverB] = pressureColor(pressure);
 
     ctx.save();
+    if (bookmarked) {
+      ctx.beginPath();
+      ctx.arc(x, y, radius + 16 + breath * 5, 0, Math.PI * 2);
+      ctx.strokeStyle = "#1B7A8F";
+      ctx.globalAlpha = 0.7 + breath * 0.25;
+      ctx.lineWidth = 5;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
     ctx.beginPath();
     ctx.arc(x, y, radius + 8 + breath * 8 + pressure * 18, 0, Math.PI * 2);
     ctx.fillStyle = hovered || selected ? `rgba(${hoverR}, ${hoverG}, ${hoverB}, ${0.12 + pressure * 0.24})` : "rgba(27, 122, 143, 0.1)";
@@ -512,7 +524,19 @@ function LiteratureGraphScreen() {
           Drag nodes / weighted force network / live literature topology
         </div>
         <PaperHoverCard node={selectedPaper ? null : hoveredNode} position={hoverCardPosition} />
-        <PaperDetailOverlay paper={selectedPaper} onClose={() => selectPaper(null)} />
+        <PaperDetailOverlay
+          paper={selectedPaper}
+          bookmarked={selectedPaper ? bookmarkedNodeIds.has(selectedPaper.id) : false}
+          onToggleBookmark={(paperId) =>
+            setBookmarkedNodeIds((current) => {
+              const next = new Set(current);
+              if (next.has(paperId)) next.delete(paperId);
+              else next.add(paperId);
+              return next;
+            })
+          }
+          onClose={() => selectPaper(null)}
+        />
       </section>
     </main>
   );
@@ -535,7 +559,17 @@ function PaperHoverCard({ node, position }: { node: ForceNode | null; position: 
   );
 }
 
-function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: () => void }) {
+function PaperDetailOverlay({
+  paper,
+  bookmarked,
+  onToggleBookmark,
+  onClose,
+}: {
+  paper: Paper | null;
+  bookmarked: boolean;
+  onToggleBookmark: (paperId: string) => void;
+  onClose: () => void;
+}) {
   return (
     <div
       onPointerDown={(event) => {
@@ -548,6 +582,17 @@ function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: 
     >
       {paper && (
         <article className="relative w-full max-w-2xl border-2 border-industrial bg-card p-7 dexter-shadow animate-in fade-in zoom-in-95 duration-200">
+          <button
+            type="button"
+            onClick={() => onToggleBookmark(paper.id)}
+            aria-label={bookmarked ? "Remove bookmark" : "Bookmark paper"}
+            className={cn(
+              "absolute right-24 top-5 flex h-9 w-9 items-center justify-center border-2 border-industrial bg-background transition-transform hover:-translate-y-0.5",
+              bookmarked && "bg-primary text-primary-foreground",
+            )}
+          >
+            <Bookmark size={17} fill={bookmarked ? "currentColor" : "none"} strokeWidth={2.5} />
+          </button>
           <button
             type="button"
             onClick={onClose}
@@ -564,7 +609,7 @@ function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: 
           <div className="mt-7 grid grid-cols-3 gap-3 font-mono text-xs font-bold uppercase">
             <div className="border-2 border-industrial bg-secondary p-3">Influence<br />{Math.round(paper.influence * 100)}%</div>
             <div className="border-2 border-industrial bg-secondary p-3">Status<br />Reviewed</div>
-            <div className="border-2 border-industrial bg-secondary p-3">Action<br />Pinned</div>
+            <div className="border-2 border-industrial bg-secondary p-3">Action<br />{bookmarked ? "Bookmarked" : "Open"}</div>
           </div>
         </article>
       )}
