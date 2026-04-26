@@ -47,6 +47,7 @@ const pressureColor = (pressure: number) => {
 };
 
 type LassoPoint = { x: number; y: number };
+type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string };
 
 const buildFreehandPath = (points: LassoPoint[], close = false) => {
   if (!points.length) return "";
@@ -89,6 +90,18 @@ const lassoTouchesRect = (points: LassoPoint[], rect: DOMRect) => {
     rectPoints.some((point) => pointInPolygon(point, points)) ||
     points.some((point) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
   );
+};
+
+const textOffsetInElement = (element: HTMLElement, node: Node, offset: number) => {
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let total = 0;
+  let current = walker.nextNode();
+  while (current) {
+    if (current === node) return total + offset;
+    total += current.textContent?.length ?? 0;
+    current = walker.nextNode();
+  }
+  return total;
 };
 
 type ForceNode = {
