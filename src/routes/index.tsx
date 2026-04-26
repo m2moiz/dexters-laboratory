@@ -322,6 +322,8 @@ function LiteratureGraphScreen() {
     const render = (time: number) => {
       const nodes = nodesRef.current;
       nodes.forEach((node, index) => {
+        const targetScale = node.id === hoveredNode?.id ? 1.26 : 1;
+        node.hoverScale = (node.hoverScale ?? 1) + (targetScale - (node.hoverScale ?? 1)) * 0.16;
         if (node !== dragRef.current) {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
@@ -345,10 +347,10 @@ function LiteratureGraphScreen() {
       simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
-      const minX = Math.min(...xs) - 90;
-      const maxX = Math.max(...xs) + 90;
-      const minY = Math.min(...ys) - 90;
-      const maxY = Math.max(...ys) + 90;
+      const minX = Math.min(...xs) - 115;
+      const maxX = Math.max(...xs) + 115;
+      const minY = Math.min(...ys) - 115;
+      const maxY = Math.max(...ys) + 115;
       const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
       const nextTransform = {
         scale,
