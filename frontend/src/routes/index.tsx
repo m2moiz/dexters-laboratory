@@ -454,6 +454,8 @@ function LiteratureGraphScreen() {
     const render = (time: number) => {
       const nodes = nodesRef.current;
       const hovered = hoveredNode ? nodes.find((node) => node.id === hoveredNode.id) : null;
+      const renderMinScale = Math.max(0.6, Math.min(1.0, 4 / Math.max(nodes.length, 1)));
+      const boundaryRadius = Math.min(graphSize.width, graphSize.height) / (2 * renderMinScale) - 140;
       nodes.forEach((node, index) => {
         const isHovered = node.id === hoveredNode?.id;
         const targetCharge = isHovered ? 1 : 0;
@@ -478,6 +480,12 @@ function LiteratureGraphScreen() {
             Math.sin(orbit) * orbitalForce +
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
             (y / distance) * centerPull;
+          if (distance > boundaryRadius) {
+            const overshoot = distance - boundaryRadius;
+            const pullback = Math.min(overshoot * 0.06, 6);
+            node.vx -= (x / distance) * pullback;
+            node.vy -= (y / distance) * pullback;
+          }
         }
         if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
