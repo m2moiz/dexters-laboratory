@@ -410,6 +410,7 @@ function LiteratureGraphScreen() {
   useEffect(() => {
     nodesRef.current = graphData.nodes.map((node) => ({ ...node }));
     linksRef.current = graphData.links.map((link) => ({ ...link }));
+    transformRef.current = { scale: 1, x: 0, y: 0 };
 
     const simulation = forceSimulation<ForceNode>(nodesRef.current)
       .force(
@@ -624,7 +625,7 @@ function LiteratureGraphScreen() {
         </div>
       </WorkflowHeader>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
-        <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
+        <canvas key={`graph-${plan.papers.length}-${plan.papers[0]?.id ?? "empty"}`} ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
         <div className="pointer-events-none absolute bottom-5 left-5 border-2 border-industrial bg-card px-4 py-3 font-mono text-xs font-bold uppercase dexter-shadow">
           Drag nodes / weighted force network / live literature topology
         </div>

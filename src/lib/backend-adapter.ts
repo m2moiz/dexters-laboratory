@@ -1,4 +1,4 @@
-import type { ExperimentPlan, Paper, SourceCitation } from "./mock-plan";
+import type { ExperimentPlan, LiteratureEdge, Paper, SourceCitation } from "./mock-plan";
 
 export type BackendEnrichedPlan = {
   hypothesis: string;
@@ -113,6 +113,48 @@ export function adaptBackendPlan(raw: BackendEnrichedPlan): ExperimentPlan {
     excerpt: "",
   }));
 
+  // Synthesize literature edges from shared tags (backend returns no edges).
+  // Cap to top 3 strongest connections per node so the force layout doesn't hairball.
+  const buildEdges = (paperList: Paper[]): LiteratureEdge[] => {
+    type Candidate = { source: string; target: string; weight: number };
+    const candidates: Candidate[] = [];
+    for (let i = 0; i < paperList.length; i++) {
+      const ti = new Set(raw.enrichedPapers[i]?.tags ?? []);
+      if (ti.size === 0) continue;
+      for (let j = i + 1; j < paperList.length; j++) {
+        const tj = raw.enrichedPapers[j]?.tags ?? [];
+        if (!tj.length) continue;
+        let shared = 0;
+        for (const t of tj) if (ti.has(t)) shared++;
+        if (shared === 0) continue;
+        candidates.push({
+          source: paperList[i].id,
+          target: paperList[j].id,
+          weight: shared / Math.max(ti.size, tj.length),
+        });
+      }
+    }
+    candidates.sort((a, b) => b.weight - a.weight);
+    const perNode = new Map<string, number>();
+    const out: LiteratureEdge[] = [];
+    let edgeIdx = 0;
+    for (const c of candidates) {
+      const sCount = perNode.get(c.source) ?? 0;
+      const tCount = perNode.get(c.target) ?? 0;
+      if (sCount >= 3 && tCount >= 3) continue;
+      out.push({
+        id: `edge-${edgeIdx++}`,
+        source: c.source,
+        target: c.target,
+        weight: c.weight,
+        relationship: "similar_topic",
+      });
+      perNode.set(c.source, sCount + 1);
+      perNode.set(c.target, tCount + 1);
+    }
+    return out;
+  };
+
   const papers: Paper[] = raw.enrichedPapers.map((p, idx, arr) => {
     const angle = (idx * 2 * Math.PI) / Math.max(arr.length, 1);
     const radius = 200 + (1 - p.influenceScore) * 200;
@@ -189,7 +231,7 @@ export function adaptBackendPlan(raw: BackendEnrichedPlan): ExperimentPlan {
     sources,
     claims: [],
     papers,
-    edges: [],
+    edges: buildEdges(papers),
     activity: [],
     comments: [],
   };
