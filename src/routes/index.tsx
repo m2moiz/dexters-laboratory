@@ -30,9 +30,9 @@ export const Route = createFileRoute("/")({
 
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphLayoutScale = 0.58;
-const graphNodeRadius = (influence: number) => 21 + influence * 23;
+const graphNodeRadius = (influence: number) => 17 + influence * 19;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
-const graphRingRadius = (index: number) => (index % 3 === 0 ? 108 : index % 3 === 1 ? 184 : 268) * graphLayoutScale;
+const graphRingRadius = (index: number) => (index % 3 === 0 ? 138 : index % 3 === 1 ? 248 : 356) * graphLayoutScale;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
   const stops = [
@@ -325,11 +325,11 @@ function LiteratureGraphScreen() {
         "link",
         forceLink<ForceNode, ForceLink>(linksRef.current)
           .id((node) => node.id)
-          .distance((link) => 178 - link.weight * 58)
-          .strength((link) => 0.08 + link.weight * 0.2),
+          .distance((link) => 238 - link.weight * 72)
+          .strength((link) => 0.06 + link.weight * 0.16),
       )
-      .force("charge", forceManyBody<ForceNode>().strength((node) => -190 - node.influence * 125))
-      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + 18).strength(1))
+      .force("charge", forceManyBody<ForceNode>().strength((node) => -260 - node.influence * 170))
+      .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + 30).strength(1))
       .force("radial", forceRadial<ForceNode>((node, index) => graphRingRadius(index), 0, 0).strength(0.13))
       .force("center", forceCenter(0, 0))
       .alpha(1)
