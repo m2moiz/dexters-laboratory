@@ -125,7 +125,7 @@ function LoadingScreen() {
           <span className="dexter-spark dexter-spark-a" />
           <span className="dexter-spark dexter-spark-b" />
           <span className="dexter-spark dexter-spark-c" />
-          <h1 className="dexter-sign-title font-display text-5xl font-semibold leading-none text-primary md:text-[76px]">
+          <h1 className="dexter-sign-title font-lab-title text-6xl font-normal leading-[0.82] text-primary md:text-[92px]">
             DEXTER’S<br />LABORATORY
           </h1>
         </div>
