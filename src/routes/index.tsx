@@ -733,7 +733,17 @@ function PaperDetailOverlay({
   );
 }
 
-function HighlightableText({ text, reportId, highlights }: { text: string; reportId: string; highlights: ReportHighlight[] }) {
+function HighlightableText({
+  text,
+  reportId,
+  highlights,
+  onQueuedHover,
+}: {
+  text: string;
+  reportId: string;
+  highlights: ReportHighlight[];
+  onQueuedHover?: (highlight: ReportHighlight, element: HTMLElement) => void;
+}) {
   const sortedHighlights = [...highlights]
     .filter((highlight) => highlight.reportId === reportId)
     .sort((a, b) => a.start - b.start);
@@ -751,6 +761,9 @@ function HighlightableText({ text, reportId, highlights }: { text: string; repor
           key={highlight.key}
           className={cn("dexter-report-selected", highlight.correction && "dexter-report-queued")}
           data-highlight-key={highlight.key}
+          onMouseEnter={(event) => {
+            if (highlight.correction) onQueuedHover?.(highlight, event.currentTarget);
+          }}
           title={highlight.correction ? `Queued correction: ${highlight.correction}` : undefined}
         >
           {text.slice(start, end)}
@@ -948,6 +961,15 @@ function PlanViewScreen() {
     setPromptBox(null);
   };
 
+  const openQueuedPrompt = (highlight: ReportHighlight, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    setSelectedText(highlight.text);
+    setActiveHighlightKey(highlight.key);
+    setCorrectionPrompt(highlight.correction ?? "");
+    setContextMenu(null);
+    setPromptBox({ x: rect.left + rect.width / 2, y: rect.bottom + 12, action: "Edit adjustment" });
+  };
+
   const downloadReportPdf = async () => {
     if (exportingPdf) return;
     setExportingPdf(true);
@@ -1085,7 +1107,7 @@ function PlanViewScreen() {
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
             <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
-                      <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} />
+                      <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} onQueuedHover={openQueuedPrompt} />
             </p>
             {plan.sections.map((section, sectionIndex) => (
               <section
@@ -1105,7 +1127,7 @@ function PlanViewScreen() {
                       data-report-id={itemId}
                       className={cn("dexter-report-paragraph", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
                     >
-                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} />
+                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} onQueuedHover={openQueuedPrompt} />
                     </p>
                   );
                 })}

@@ -254,14 +254,15 @@
 
   .dexter-report-queued::after {
     content: "";
-    display: inline-block;
+    position: absolute;
+    right: -0.42rem;
+    bottom: -0.18rem;
     width: 0.58rem;
     height: 0.58rem;
-    margin-left: 0.22rem;
     border: 2px solid var(--industrial);
     background: var(--accent);
-    vertical-align: 0.08em;
     box-shadow: 1.5px 1.5px 0 var(--industrial);
+    pointer-events: none;
   }
 
   .dexter-reference-linked {
