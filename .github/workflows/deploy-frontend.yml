@@ -33,7 +33,7 @@ jobs:
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          apiToken: ${{ secrets.CLOUDFLAREAPI }}
+          accountId: 32d9bdbd51b7230fe3f7f0b5626c4ed7
           workingDirectory: frontend
           command: deploy --config wrangler.jsonc
