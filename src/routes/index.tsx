@@ -38,6 +38,7 @@ type ForceNode = {
   shortLabel: string;
   val: number;
   phase: number;
+  hoverScale?: number;
   x?: number;
   y?: number;
   vx?: number;
@@ -236,11 +237,12 @@ function LiteratureGraphScreen() {
   };
 
   const drawNode = (node: ForceNode, ctx: CanvasRenderingContext2D) => {
-    const radius = graphNodeRadius(node.influence);
+    const baseRadius = graphNodeRadius(node.influence);
     const selected = node.id === selectedPaperId;
     const hovered = node.id === hoveredNode?.id;
     const visited = visitedNodeIds.has(node.id);
     const breath = (Math.sin(performance.now() / 360 + node.phase) + 1) / 2;
+    const radius = baseRadius * (node.hoverScale ?? 1);
     const x = node.x ?? 0;
     const y = node.y ?? 0;
 
@@ -256,7 +258,7 @@ function LiteratureGraphScreen() {
     ctx.fill();
 
     ctx.beginPath();
-    ctx.arc(x, y, radius + (hovered ? 5 : 0), 0, Math.PI * 2);
+    ctx.arc(x, y, radius + (hovered ? 3 : 0), 0, Math.PI * 2);
     ctx.fillStyle = selected ? "#C73E3A" : hovered ? "#1B7A8F" : visited ? "#B9B4AA" : "#FFFDF6";
     ctx.fill();
     ctx.globalAlpha = visited && !selected && !hovered ? 0.74 : 1;
