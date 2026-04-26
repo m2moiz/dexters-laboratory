@@ -1,7 +1,6 @@
 import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
-import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 import { Bookmark } from "lucide-react";
 
@@ -900,40 +899,66 @@ function PlanViewScreen() {
   };
 
   const downloadReportPdf = async () => {
-    const reportElement = reportRef.current;
-    if (!reportElement || exportingPdf) return;
+    if (exportingPdf) return;
     setExportingPdf(true);
     setContextMenu(null);
     setPromptBox(null);
     setLasso({ active: false, drawing: false, points: [] });
 
     try {
-      await new Promise((resolve) => window.requestAnimationFrame(resolve));
-      const canvas = await html2canvas(reportElement, {
-        backgroundColor: getComputedStyle(reportElement).backgroundColor,
-        scale: Math.min(window.devicePixelRatio || 1, 2),
-        useCORS: true,
-        logging: false,
-        ignoreElements: (element) => element instanceof HTMLElement && element.dataset.pdfExclude === "true",
-      });
       const pdf = new jsPDF("p", "mm", "a4");
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const imageWidth = pageWidth - margin * 2;
-      const imageHeight = (canvas.height * imageWidth) / canvas.width;
-      const imageData = canvas.toDataURL("image/png");
+      const margin = 18;
+      const contentWidth = pageWidth - margin * 2;
+      let y = margin;
 
-      let position = margin;
-      pdf.addImage(imageData, "PNG", margin, position, imageWidth, imageHeight);
-      let remainingHeight = imageHeight - (pageHeight - margin * 2);
-
-      while (remainingHeight > 0) {
+      const addPage = () => {
         pdf.addPage();
-        position = margin - (imageHeight - remainingHeight);
-        pdf.addImage(imageData, "PNG", margin, position, imageWidth, imageHeight);
-        remainingHeight -= pageHeight - margin * 2;
-      }
+        pdf.setFillColor(253, 248, 231);
+        pdf.rect(0, 0, pageWidth, pageHeight, "F");
+        y = margin;
+      };
+      const ensureSpace = (height: number) => {
+        if (y + height > pageHeight - margin) addPage();
+      };
+      const writeWrapped = (text: string, size: number, lineHeight: number, style: "normal" | "bold" = "normal") => {
+        pdf.setFont("times", style);
+        pdf.setFontSize(size);
+        const lines = pdf.splitTextToSize(text, contentWidth) as string[];
+        ensureSpace(lines.length * lineHeight + 3);
+        pdf.text(lines, margin, y, { baseline: "top" });
+        y += lines.length * lineHeight + 3;
+      };
+
+      pdf.setFillColor(253, 248, 231);
+      pdf.rect(0, 0, pageWidth, pageHeight, "F");
+      pdf.setTextColor(30, 29, 25);
+      pdf.setDrawColor(64, 151, 166);
+      pdf.setLineWidth(0.7);
+      pdf.line(margin, margin + 6, pageWidth - margin, margin + 6);
+      y += 14;
+
+      writeWrapped("Generated experimental report", 10, 5, "bold");
+      writeWrapped("Trehalose cryopreservation feasibility plan", 22, 9, "bold");
+      pdf.setDrawColor(64, 151, 166);
+      pdf.line(margin, y + 1, margin, y + 18);
+      y += 3;
+      writeWrapped(hypothesis, 13, 7);
+
+      plan.sections.forEach((section) => {
+        y += 5;
+        writeWrapped(section.title, 17, 8, "bold");
+        section.content.forEach((paragraph) => writeWrapped(paragraph, 11, 6));
+      });
+
+      y += 5;
+      writeWrapped("References", 16, 8, "bold");
+      plan.papers.forEach((paper) => writeWrapped(`${paper.id} / ${paper.year} — ${paper.title}`, 10, 5));
+
+      y += 4;
+      writeWrapped("Notes", 16, 8, "bold");
+      plan.comments.forEach((item) => writeWrapped(`• ${item}`, 10, 5));
 
       pdf.save("dexter-experimental-report.pdf");
     } finally {
