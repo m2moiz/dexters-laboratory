@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
+import { forceCenter, forceCollide, forceLink, forceManyBody, forceRadial, forceSimulation } from "d3-force";
 import { Bookmark } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -191,16 +191,20 @@ function LiteratureGraphScreen() {
 
   const graphData = useMemo<ForceGraphData>(
     () => ({
-      nodes: plan.papers.map((paper) => ({
+      nodes: plan.papers.map((paper, index) => {
+        const angle = (index / Math.max(plan.papers.length, 1)) * Math.PI * 2 - Math.PI / 2;
+        const ring = index % 3 === 0 ? 74 : index % 3 === 1 ? 138 : 196;
+        return {
         id: paper.id,
         paper,
         influence: paper.influence,
         shortLabel: paper.id.toUpperCase(),
         val: graphNodeRadius(paper.influence),
         phase: indexFromPaperId(paper.id) * 1.37,
-        x: paper.x * graphLayoutScale,
-        y: paper.y * graphLayoutScale,
-      })),
+        x: Math.cos(angle) * ring * graphLayoutScale,
+        y: Math.sin(angle) * ring * graphLayoutScale,
+      };
+      }),
       links: plan.edges.map((edge) => ({ id: edge.id, source: edge.source, target: edge.target, weight: edge.weight })),
     }),
     [plan.edges, plan.papers],
@@ -325,6 +329,7 @@ function LiteratureGraphScreen() {
       )
       .force("charge", forceManyBody<ForceNode>().strength((node) => -145 - node.influence * 115))
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 12).strength(0.78))
+      .force("radial", forceRadial<ForceNode>((node, index) => (index % 3 === 0 ? 86 : index % 3 === 1 ? 152 : 218) * graphLayoutScale, 0, 0).strength(0.055))
       .force("center", forceCenter(0, 0))
       .alpha(1)
       .alphaDecay(0.0016)
@@ -366,7 +371,7 @@ function LiteratureGraphScreen() {
           const orbit = Math.atan2(y, x) + Math.PI / 2;
           const orbitalForce = 0.024 + node.influence * 0.014;
           const waveForce = 0.026;
-          const centerPull = Math.min(distance, 360) * 0.00024;
+          const centerPull = Math.min(distance, 360) * 0.00016;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
