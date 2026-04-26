@@ -771,7 +771,9 @@ function PlanGeneratingScreen() {
 
   return (
     <main className={cn(screenClass, "grid min-h-screen grid-cols-1 lg:grid-cols-[60%_40%]")}> 
-      <section className="border-r-2 border-industrial p-8 lg:p-12">
+      <section className="border-r-2 border-industrial">
+        <WorkflowHeader title="DEXTER / GENERATING PLAN" />
+        <div className="p-8 lg:p-12">
         <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-primary">
           DEXTER / GENERATING PLAN
         </p>
@@ -797,6 +799,7 @@ function PlanGeneratingScreen() {
               </Card>
             );
           })}
+        </div>
         </div>
       </section>
       <section className="bg-primary p-8 text-primary-foreground lg:p-12">
