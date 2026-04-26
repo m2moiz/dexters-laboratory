@@ -819,13 +819,15 @@ function PlanGeneratingScreen() {
 function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
+  const highlights = useDexterStore((state) => state.reportHighlights);
+  const setHighlights = useDexterStore((state) => state.setReportHighlights);
+  const activeReference = useDexterStore((state) => state.activeReference);
+  const setActiveReference = useDexterStore((state) => state.setActiveReference);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
-  const [highlights, setHighlights] = useState<ReportHighlight[]>([]);
   const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
   const [selectedText, setSelectedText] = useState("");
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null; highlightKey: string | null } | null>(null);
   const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
-  const [activeReference, setActiveReference] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; points: LassoPoint[] }>({
     active: false,
@@ -1022,7 +1024,8 @@ function PlanViewScreen() {
         setLasso({ active: false, drawing: false, points: [] });
       }}
     >
-      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[1fr_auto] lg:px-8">
+      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[auto_1fr_auto] lg:px-8">
+        <WorkflowHeader />
         <p className="line-clamp-2 max-w-4xl text-xs leading-5 text-muted-foreground">{hypothesis}</p>
         <div className="grid grid-cols-3 gap-5 text-right">
           {plan.metrics.map((metric) => (
