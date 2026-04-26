@@ -7,6 +7,7 @@ import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import dexterBeakerLogo from "@/assets/dexter-beaker-logo.jpg";
 import { type ReportHighlight, useDexterStore } from "@/lib/dexter-store";
 import { exampleHypotheses, type Paper, type PlanSection } from "@/lib/mock-plan";
 import { cn } from "@/lib/utils";
@@ -172,24 +173,7 @@ function LoadingScreen() {
       <div className="absolute inset-y-0 right-0 w-1/2 border-l-2 border-industrial bg-primary dexter-door-right" />
       <section className="relative z-10 w-full max-w-3xl text-center dexter-title-reveal">
         <div className="dexter-beaker-mark mx-auto mb-7 flex h-40 w-32 items-center justify-center dexter-instrument-pulse" aria-label="Dexter beaker logo">
-          <svg viewBox="0 0 160 220" role="img" className="h-full w-full overflow-visible">
-            <path className="dexter-beaker-glass" d="M64 20h32v72l47 87c7 14-3 31-19 31H36c-16 0-26-17-19-31l47-87V20Z" />
-            <path className="dexter-beaker-liquid" d="M28 160c16-7 31-8 47-2 19 8 36 1 57-9l17 32c6 12-2 26-16 26H28c-13 0-22-14-16-26l16-21Z" />
-            <path className="dexter-beaker-neck" d="M61 18h38" />
-            <path className="dexter-beaker-highlight" d="M99 43v66" />
-            <ellipse className="dexter-beaker-hair" cx="91" cy="129" rx="34" ry="11" transform="rotate(13 91 129)" />
-            <path className="dexter-beaker-hair-line" d="M72 124c11 7 21 9 34 8" />
-            <path className="dexter-beaker-hair-line" d="M97 133c2 8 7 13 15 15" />
-            <path className="dexter-beaker-glasses" d="M48 151c3 16 19 21 31 10m7-9c15 9 31 7 38-8" />
-            <path className="dexter-beaker-glasses" d="M79 158c3-7 7-9 12-7" />
-            <circle className="dexter-beaker-bubble" cx="44" cy="172" r="3" />
-            <circle className="dexter-beaker-bubble" cx="55" cy="181" r="2" />
-            <circle className="dexter-beaker-bubble" cx="119" cy="163" r="4" />
-            <circle className="dexter-beaker-bubble" cx="127" cy="174" r="2" />
-            <circle className="dexter-beaker-bubble" cx="80" cy="10" r="7" />
-            <circle className="dexter-beaker-bubble" cx="74" cy="-8" r="4" />
-            <circle className="dexter-beaker-bubble" cx="84" cy="-22" r="3" />
-          </svg>
+          <img src={dexterBeakerLogo} alt="Dexter beaker logo" className="h-full w-full object-contain" />
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-primary">Experiment bay 07</p>
         <div className="dexter-neon-sign relative mx-auto mt-4 w-fit border-2 border-industrial bg-card px-5 py-4 dexter-shadow md:px-8 md:py-5">
