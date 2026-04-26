@@ -344,8 +344,9 @@ function LiteratureGraphScreen() {
       nodes.forEach((node, index) => {
         const isHovered = node.id === hoveredNode?.id;
         const targetCharge = isHovered ? 1 : 0;
-        node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.018 : 0.12)));
-        node.hoverScale = 1 + (node.hoverCharge ?? 0) * 0.58;
+        node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.012 : 0.1)));
+        const pressure = easedPressure(node.hoverCharge ?? 0);
+        node.hoverScale = 1 + pressure * 0.72;
         if (node !== dragRef.current) {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
@@ -369,12 +370,15 @@ function LiteratureGraphScreen() {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
           const dy = (node.y ?? 0) - (hovered.y ?? 0);
           const distance = Math.max(Math.hypot(dx, dy), 1);
-          const influence = Math.max(0, 1 - distance / 240) * (hovered.hoverCharge ?? 0);
-          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 0.42;
-          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 0.42;
+          const pressure = easedPressure(hovered.hoverCharge ?? 0);
+          const radius = 270 + pressure * 210;
+          const falloff = Math.max(0, 1 - distance / radius);
+          const influence = falloff * falloff * pressure;
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 1.85;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 1.85;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.12)).tick(1);
       const xs = nodes.map((node) => node.x ?? 0);
       const ys = nodes.map((node) => node.y ?? 0);
       const minX = Math.min(...xs) - 115;
