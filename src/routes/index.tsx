@@ -121,9 +121,14 @@ function LoadingScreen() {
           </div>
         </div>
         <p className="font-mono text-xs font-bold uppercase tracking-[0.28em] text-primary">Experiment bay 07</p>
-        <h1 className="mt-4 font-display text-5xl font-semibold leading-none text-primary md:text-[76px]">
-          DEXTER’S<br />LABORATORY
-        </h1>
+        <div className="dexter-neon-sign relative mx-auto mt-4 w-fit border-2 border-industrial bg-card px-5 py-4 dexter-shadow md:px-8 md:py-5">
+          <span className="dexter-spark dexter-spark-a" />
+          <span className="dexter-spark dexter-spark-b" />
+          <span className="dexter-spark dexter-spark-c" />
+          <h1 className="dexter-sign-title font-display text-5xl font-semibold leading-none text-primary md:text-[76px]">
+            DEXTER’S<br />LABORATORY
+          </h1>
+        </div>
         <p className="mx-auto mt-5 max-w-md text-base text-muted-foreground">
           From hypothesis to runnable experiment
         </p>

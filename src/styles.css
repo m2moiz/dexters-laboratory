@@ -238,6 +238,45 @@
     background-size: 100% 220%;
     animation: dexter-scan 1100ms linear infinite;
   }
+
+  .dexter-neon-sign {
+    overflow: visible;
+    animation: dexter-sign-power 1700ms steps(1, end) 1520ms both;
+  }
+
+  .dexter-sign-title {
+    animation: dexter-letter-glow 1700ms steps(1, end) 1520ms both;
+    color: var(--primary);
+    text-shadow: none;
+  }
+
+  .dexter-spark {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border: 2px solid var(--industrial);
+    background: var(--accent);
+    opacity: 0;
+    box-shadow: 0 0 0 color-mix(in oklab, var(--accent) 0%, transparent);
+  }
+
+  .dexter-spark-a {
+    right: 12%;
+    top: -12px;
+    animation: dexter-spark-jump 560ms ease-out 1680ms both;
+  }
+
+  .dexter-spark-b {
+    left: 16%;
+    top: 42%;
+    animation: dexter-spark-jump 520ms ease-out 1960ms both;
+  }
+
+  .dexter-spark-c {
+    bottom: -10px;
+    right: 28%;
+    animation: dexter-spark-jump 620ms ease-out 2220ms both;
+  }
 }
 
 @keyframes dexter-grid-wake {
@@ -283,4 +322,33 @@
 @keyframes dexter-scan {
   from { background-position: 0 0; }
   to { background-position: 0 220%; }
+}
+
+@keyframes dexter-sign-power {
+  0%, 18%, 31% { background-color: var(--card); }
+  19%, 26%, 32%, 100% { background-color: color-mix(in oklab, var(--primary) 9%, var(--card)); }
+}
+
+@keyframes dexter-letter-glow {
+  0%, 18%, 31% {
+    color: color-mix(in oklab, var(--primary) 58%, var(--industrial));
+    text-shadow: none;
+  }
+  19%, 26% {
+    color: color-mix(in oklab, var(--primary) 72%, var(--card));
+    text-shadow: 0 0 10px color-mix(in oklab, var(--primary) 46%, transparent);
+  }
+  32%, 100% {
+    color: var(--primary);
+    text-shadow:
+      0 0 8px color-mix(in oklab, var(--primary) 44%, transparent),
+      0 0 20px color-mix(in oklab, var(--primary) 24%, transparent);
+  }
+}
+
+@keyframes dexter-spark-jump {
+  0% { opacity: 0; transform: translate(0, 0) scale(0.2) rotate(0deg); }
+  18% { opacity: 1; transform: translate(7px, -7px) scale(1) rotate(16deg); box-shadow: 0 0 18px color-mix(in oklab, var(--accent) 72%, transparent); }
+  42% { opacity: 1; transform: translate(-5px, 5px) scale(0.75) rotate(42deg); }
+  100% { opacity: 0; transform: translate(16px, -16px) scale(0.12) rotate(72deg); }
 }
