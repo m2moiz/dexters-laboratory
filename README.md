@@ -14,7 +14,7 @@ Built for Hack-Nation 5 — Fulcrum Track.
 
 ## Live URLs
 
-- **Frontend:** TBD (deployed from `frontend/` on push to `main`)
+- **Frontend:** https://dexter-frontend.vercel.app
 - **Backend:** https://ai-scientist-ruddy.vercel.app
 
 ## Local development
