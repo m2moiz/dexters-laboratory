@@ -52,7 +52,7 @@ export type EquipmentItem = {
 };
 
 export type BudgetLine = {
-  category: 'reagents' | 'consumables' | 'cell_lines' | 'equipment_time' | 'personnel' | 'overhead' | 'other';
+  category: string;
   description: string;
   cost_eur: number;
   material_ids: string[];
@@ -107,7 +107,7 @@ export type Paper = {
   authors: string;
   year: number;
   abstract: string;
-  source: 'arXiv' | 'PubMed' | 'bioRxiv' | 'Other';
+  source: string;
   url: string;
   x: number;
   y: number;

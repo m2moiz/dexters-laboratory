@@ -176,6 +176,7 @@ function HypothesisInputScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const setHypothesis = useDexterStore((state) => state.setHypothesis);
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
+  const fetchPlan = useDexterStore((state) => state.fetchPlan);
 
   return (
     <main className={cn(screenClass, "flex min-h-screen flex-col")}> 
@@ -214,7 +215,10 @@ function HypothesisInputScreen() {
         </div>
         <Button
           type="button"
-          onClick={() => setCurrentScreen("LITERATURE_GRAPH")}
+          onClick={() => {
+            void fetchPlan(hypothesis);
+            setCurrentScreen("LITERATURE_GRAPH");
+          }}
           className="dexter-cta-shadow mt-10 h-16 rounded-none border-2 border-industrial bg-accent px-10 font-mono text-base font-bold uppercase text-accent-foreground hover:bg-accent hover:shadow-[8px_8px_0px_var(--industrial)]"
         >
           GENERATE PLAN
@@ -261,6 +265,9 @@ function LiteratureGraphScreen() {
   const selectedPaper = useDexterStore((state) => state.currentlySelectedPaper);
   const selectPaper = useDexterStore((state) => state.selectPaper);
   const beginPlanGeneration = useDexterStore((state) => state.beginPlanGeneration);
+  const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
+  const planFetchStatus = useDexterStore((state) => state.planFetchStatus);
+  const apiError = useDexterStore((state) => state.apiError);
   const visitedNodeIds = useDexterStore((state) => state.visitedNodeIds);
   const bookmarkedNodeIds = useDexterStore((state) => state.bookmarkedNodeIds);
   const markNodeVisited = useDexterStore((state) => state.markNodeVisited);
@@ -597,13 +604,24 @@ function LiteratureGraphScreen() {
   return (
     <main className={screenClass}>
       <WorkflowHeader title={hypothesis}>
-        <Button
-          type="button"
-          onClick={beginPlanGeneration}
-          className="h-10 shrink-0 rounded-none border-2 border-industrial bg-accent px-5 font-mono text-xs font-bold uppercase text-accent-foreground hover:bg-accent"
-        >
-          Continue to Plan
-        </Button>
+        <div className="flex items-center gap-3">
+          {planFetchStatus === "error" && (
+            <p className="font-mono text-[11px] font-bold uppercase text-critical max-w-[280px] truncate" title={apiError ?? ""}>
+              Plan fetch failed — go back to retry
+            </p>
+          )}
+          <Button
+            type="button"
+            onClick={() => {
+              if (planFetchStatus === "success") setCurrentScreen("PLAN_VIEW");
+              else beginPlanGeneration();
+            }}
+            disabled={planFetchStatus === "error"}
+            className="h-10 shrink-0 rounded-none border-2 border-industrial bg-accent px-5 font-mono text-xs font-bold uppercase text-accent-foreground hover:bg-accent disabled:opacity-50"
+          >
+            {planFetchStatus === "success" ? "View Plan" : "Continue to Plan"}
+          </Button>
+        </div>
       </WorkflowHeader>
       <section ref={graphWrapRef} className="dexter-force-graph relative h-[calc(100vh-60px)] overflow-hidden">
         <canvas ref={canvasRef} className="h-full w-full cursor-grab active:cursor-grabbing" />
@@ -768,21 +786,35 @@ const GENERATING_SECTIONS: { id: string; title: string; label: string; placehold
   { id: "sources", title: "Sources", label: "§ SOURCES", placeholder: "Compiling citations and excerpts..." },
 ];
 
+const FALLBACK_ACTIVITY: string[] = [
+  "[LAB-LOG] Initializing experiment design pipeline...",
+  "[LAB-LOG] Searching protocols.io for relevant protocols...",
+  "[LAB-LOG] Reading methodology from seed papers...",
+  "[LAB-LOG] Querying supplier catalogs for materials...",
+  "[LAB-LOG] Computing budget and contingency...",
+  "[LAB-LOG] Validating timeline dependencies...",
+  "[LAB-LOG] Cross-referencing materials with protocol steps...",
+  "[LAB-LOG] Plan ready",
+];
+
 function PlanGeneratingScreen() {
   const plan = useDexterStore((state) => state.plan);
   const setCurrentScreen = useDexterStore((state) => state.setCurrentScreen);
+  const planFetchStatus = useDexterStore((state) => state.planFetchStatus);
+  const apiError = useDexterStore((state) => state.apiError);
+  const activity = plan.activity.length > 0 ? plan.activity : FALLBACK_ACTIVITY;
   const [visibleItems, setVisibleItems] = useState(1);
 
   useEffect(() => {
     const feedTimer = window.setInterval(() => {
-      setVisibleItems((current) => Math.min(current + 1, plan.activity.length));
+      setVisibleItems((current) => Math.min(current + 1, activity.length));
     }, 1500);
-    const screenTimer = window.setTimeout(() => setCurrentScreen("PLAN_VIEW"), 12000);
-    return () => {
-      window.clearInterval(feedTimer);
-      window.clearTimeout(screenTimer);
-    };
-  }, [plan.activity.length, setCurrentScreen]);
+    return () => window.clearInterval(feedTimer);
+  }, [activity.length]);
+
+  useEffect(() => {
+    if (planFetchStatus === "success") setCurrentScreen("PLAN_VIEW");
+  }, [planFetchStatus, setCurrentScreen]);
 
   return (
     <main className={cn(screenClass, "grid min-h-screen grid-cols-1 lg:grid-cols-[60%_40%]")}>
@@ -821,7 +853,20 @@ function PlanGeneratingScreen() {
         <p className="dexter-section-label">§ LAB-LOG</p>
         <h2 className="mt-2 font-display text-4xl font-semibold text-ink">Activity feed</h2>
         <div className="mt-8 space-y-3 font-mono text-xs leading-6 text-ink-grey">
-          {plan.activity.slice(0, visibleItems).map((line) => {
+          {planFetchStatus === "error" && (
+            <div className="border-l-[3px] border-critical bg-critical/10 p-3 text-critical font-bold">
+              <p>! Plan generation failed</p>
+              <p className="mt-1 font-normal text-xs">{apiError}</p>
+              <button
+                type="button"
+                onClick={() => setCurrentScreen("HYPOTHESIS_INPUT")}
+                className="mt-2 underline"
+              >
+                Back to hypothesis
+              </button>
+            </div>
+          )}
+          {activity.slice(0, visibleItems).map((line) => {
             const lower = line.toLowerCase();
             const success = lower.includes("found") || lower.includes("confirmed") || lower.includes("ready") || lower.includes("assembled");
             return (
@@ -865,7 +910,6 @@ function PlanViewScreen() {
   const plan = useDexterStore((state) => state.plan);
   const [activeSection, setActiveSection] = useState<string>(PLAN_TOC[0].id);
   const [highlightedMaterialId, setHighlightedMaterialId] = useState<string | null>(null);
-  const [hoveredClaimPath, setHoveredClaimPath] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -884,40 +928,7 @@ function PlanViewScreen() {
     return () => observer.disconnect();
   }, []);
 
-  const claimFor = (fieldPath: string) => plan.claims.find((c) => c.field_path === fieldPath);
-  const sourceFor = (id: string) => plan.sources.find((s) => s.id === id);
   const materialById = (id: string) => plan.materials.find((m) => m.id === id);
-
-  const renderClaimText = (text: string, fieldPath: string) => {
-    const claim = claimFor(fieldPath);
-    if (!claim) return <>{text}</>;
-    if (claim.inferred) {
-      return (
-        <span className="dexter-citation-inferred" title={claim.inferred_rationale}>
-          {text}
-        </span>
-      );
-    }
-    if (claim.citation_ids.length > 0) {
-      return (
-        <span
-          className="dexter-citation-sourced"
-          onMouseEnter={() => setHoveredClaimPath(fieldPath)}
-          onMouseLeave={() => setHoveredClaimPath(null)}
-        >
-          {text}
-        </span>
-      );
-    }
-    return <>{text}</>;
-  };
-
-  const hoveredSource = (() => {
-    if (!hoveredClaimPath) return null;
-    const claim = claimFor(hoveredClaimPath);
-    if (!claim || !claim.citation_ids.length) return null;
-    return sourceFor(claim.citation_ids[0]) ?? null;
-  })();
 
   const noveltyBadge =
     plan.novelty_check.status === "novel"
@@ -992,7 +1003,7 @@ function PlanViewScreen() {
       plan.validation.outcomes.forEach((o) =>
         writeWrapped(`${o.primary ? "[PRIMARY] " : ""}${o.name}: ${o.threshold}`, 10, 5),
       );
-      writeWrapped(plan.validation.statistical_design, 10, 5);
+      if (plan.validation.statistical_design) writeWrapped(plan.validation.statistical_design, 10, 5);
 
       writeWrapped("Sources", 16, 8, "bold");
       plan.sources.forEach((s) => writeWrapped(`${s.id} ${s.title} (${s.year ?? "n/a"}) — ${s.url}`, 9, 4));
@@ -1087,7 +1098,7 @@ function PlanViewScreen() {
               className="font-display text-ink"
               style={{ fontSize: "22px", lineHeight: 1.5, fontWeight: 500 }}
             >
-              {renderClaimText(plan.summary, "summary")}
+              {plan.summary}
             </p>,
           )}
 
@@ -1106,7 +1117,7 @@ function PlanViewScreen() {
                 {plan.novelty_check.status.replace(/_/g, " ")}
               </span>
               <p className="text-base leading-7 text-ink">
-                {renderClaimText(plan.novelty_check.summary, "novelty_check.summary")}
+                {plan.novelty_check.summary}
               </p>
               {plan.novelty_check.related_paper_ids.length > 0 && (
                 <p className="mt-3 text-sm text-concrete">
@@ -1126,7 +1137,7 @@ function PlanViewScreen() {
               {plan.assumptions.map((a, i) => (
                 <li key={i} className="text-base leading-7 text-ink">
                   <span className="text-concrete mr-2">•</span>
-                  {renderClaimText(a, `assumptions[${i}]`)}
+                  {a}
                 </li>
               ))}
             </ul>,
@@ -1138,7 +1149,7 @@ function PlanViewScreen() {
             "§ PROTOCOL",
             "Protocol",
             <div className="space-y-4">
-              {plan.protocol.steps.map((step, idx) => (
+              {plan.protocol.steps.map((step) => (
                 <div key={step.step_number} className="border border-chrome bg-cream-50 p-4 rounded-none">
                   <div className="flex gap-4">
                     <div className="font-mono text-concrete shrink-0" style={{ fontSize: "24px", lineHeight: 1 }}>
@@ -1147,47 +1158,12 @@ function PlanViewScreen() {
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-lg text-ink">{step.title}</h3>
                       <p className="text-base text-ink mt-1" style={{ lineHeight: 1.6 }}>
-                        {renderClaimText(step.description, `protocol.steps[${idx}].description`)}
+                        {step.description}
                       </p>
-                      {step.critical_parameters.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {step.critical_parameters.map((p, pi) => (
-                            <span
-                              key={pi}
-                              className="font-mono bg-cream-100 border border-ink px-2 py-1 rounded-none"
-                              style={{ fontSize: "11px" }}
-                            >
-                              {p}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {step.warnings.map((w, wi) => (
-                        <div
-                          key={wi}
-                          className="border-l-[3px] border-mustard bg-mustard/10 p-3 mt-2 text-sm text-ink"
-                        >
-                          {w}
-                        </div>
-                      ))}
-                      {step.materials_used.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1">
-                          {step.materials_used.map((mid) => (
-                            <button
-                              key={mid}
-                              type="button"
-                              onClick={() => {
-                                setHighlightedMaterialId(mid);
-                                document
-                                  .getElementById(`material-row-${mid}`)
-                                  ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                              }}
-                              className="font-mono bg-teal text-white px-2 py-1 text-xs rounded-none hover:bg-teal-dark"
-                            >
-                              {mid}
-                            </button>
-                          ))}
-                        </div>
+                      {step.duration_minutes > 0 && (
+                        <p className="mt-2 font-mono text-[11px] uppercase text-concrete">
+                          Duration: {step.duration_minutes} min
+                        </p>
                       )}
                     </div>
                   </div>
@@ -1416,18 +1392,7 @@ function PlanViewScreen() {
                 );
               })()}
               <div>
-                <h3 className="font-mono text-xs uppercase text-concrete mb-2">Controls</h3>
-                <ul className="space-y-1 text-sm">
-                  {plan.validation.controls.map((c, i) => (
-                    <li key={i}>
-                      <span className="font-medium text-ink">{c.name}</span>
-                      <span className="text-ink-grey"> — {c.rationale}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-mono text-xs uppercase text-concrete mb-2">Failure modes</h3>
+                <h3 className="font-mono text-xs uppercase text-concrete mb-2">Risks</h3>
                 <ul className="space-y-1 text-sm">
                   {plan.validation.failure_modes.map((f, i) => (
                     <li key={i}>
@@ -1437,7 +1402,6 @@ function PlanViewScreen() {
                   ))}
                 </ul>
               </div>
-              <p className="italic text-sm text-ink-grey">{plan.validation.statistical_design}</p>
             </div>,
           )}
 
@@ -1467,7 +1431,7 @@ function PlanViewScreen() {
                   >
                     {s.url}
                   </a>
-                  <p className="italic text-sm text-ink-grey mt-1">{s.excerpt}</p>
+                  {s.excerpt && <p className="italic text-sm text-ink-grey mt-1">{s.excerpt}</p>}
                 </li>
               ))}
             </ul>,
@@ -1487,35 +1451,6 @@ function PlanViewScreen() {
         {/* Right panel */}
         <aside className="hidden lg:block">
           <div className="sticky top-28 lg:h-[calc(100vh-8rem)] overflow-auto pr-2">
-            <p className="dexter-section-label mb-3">§ CITATIONS</p>
-            <p className="text-sm text-concrete mb-4">
-              Hover any underlined text to see its source.
-            </p>
-            {hoveredSource ? (
-              <div className="border-2 border-ink bg-cream-100 p-4 shadow-card mb-6 rounded-none">
-                <p className="font-mono text-[10px] uppercase text-concrete mb-1">
-                  {hoveredSource.kind} · {hoveredSource.id}
-                </p>
-                <p className="font-medium text-ink text-sm">{hoveredSource.title}</p>
-                <p className="text-xs text-concrete mt-1">
-                  {hoveredSource.authors} {hoveredSource.year ? `· ${hoveredSource.year}` : ""}
-                </p>
-                <a
-                  href={hoveredSource.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="font-mono text-[11px] text-teal underline break-all block mt-2"
-                >
-                  {hoveredSource.url}
-                </a>
-                <p className="italic text-xs text-ink-grey mt-2">{hoveredSource.excerpt}</p>
-              </div>
-            ) : (
-              <div className="border border-chrome bg-cream-50 p-4 mb-6 text-xs text-concrete">
-                No citation focused.
-              </div>
-            )}
-
             {highlightedMaterialId && (
               <div className="border-2 border-teal bg-cream-50 p-3 mb-6">
                 <p className="dexter-section-label mb-1">FOCUSED MATERIAL</p>
@@ -1533,13 +1468,17 @@ function PlanViewScreen() {
             )}
 
             <p className="dexter-section-label mb-2">§ NOTES</p>
-            <ul className="space-y-3 text-sm">
-              {plan.comments.map((c, i) => (
-                <li key={i} className="border-l-2 border-chrome pl-3 text-ink-grey">
-                  {c}
-                </li>
-              ))}
-            </ul>
+            {plan.comments.length === 0 ? (
+              <p className="text-sm text-concrete">No notes yet</p>
+            ) : (
+              <ul className="space-y-3 text-sm">
+                {plan.comments.map((c, i) => (
+                  <li key={i} className="border-l-2 border-chrome pl-3 text-ink-grey">
+                    {c}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </aside>
       </div>
