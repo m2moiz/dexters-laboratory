@@ -46,6 +46,53 @@ const pressureColor = (pressure: number) => {
   return start.map((channel, channelIndex) => Math.round(channel + (end[channelIndex] - channel) * local));
 };
 
+type LassoPoint = { x: number; y: number };
+
+const wholeTextHighlight = "__whole_text__";
+
+const buildFreehandPath = (points: LassoPoint[], close = false) => {
+  if (!points.length) return "";
+  if (points.length === 1) return `M ${points[0].x} ${points[0].y}`;
+  const [first, ...rest] = points;
+  const path = rest.reduce((commands, point, index) => {
+    const previous = points[index];
+    const midX = (previous.x + point.x) / 2;
+    const midY = (previous.y + point.y) / 2;
+    return `${commands} Q ${previous.x} ${previous.y} ${midX} ${midY}`;
+  }, `M ${first.x} ${first.y}`);
+  const last = points[points.length - 1];
+  return `${path} L ${last.x} ${last.y}${close ? " Z" : ""}`;
+};
+
+const pointInPolygon = (point: LassoPoint, polygon: LassoPoint[]) => {
+  if (polygon.length < 3) return false;
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const current = polygon[i];
+    const previous = polygon[j];
+    const crosses = current.y > point.y !== previous.y > point.y;
+    if (crosses) {
+      const xAtY = ((previous.x - current.x) * (point.y - current.y)) / (previous.y - current.y) + current.x;
+      if (point.x < xAtY) inside = !inside;
+    }
+  }
+  return inside;
+};
+
+const lassoTouchesRect = (points: LassoPoint[], rect: DOMRect) => {
+  const rectPoints = [
+    { x: rect.left, y: rect.top },
+    { x: rect.right, y: rect.top },
+    { x: rect.right, y: rect.bottom },
+    { x: rect.left, y: rect.bottom },
+    { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 },
+  ];
+  return (
+    rectPoints.some((point) => pointInPolygon(point, points)) ||
+    points.some((point) => point.x >= rect.left && point.x <= rect.right && point.y >= rect.top && point.y <= rect.bottom)
+  );
+};
+
 type ForceNode = {
   id: string;
   paper: Paper;
