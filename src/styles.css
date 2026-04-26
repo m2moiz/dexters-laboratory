@@ -200,6 +200,105 @@
     animation-duration: 1.2s;
   }
 
+  .dexter-report-stage {
+    background:
+      radial-gradient(circle at 18% 8%, color-mix(in oklab, var(--lab-sign-glow) 18%, transparent), transparent 28rem),
+      linear-gradient(180deg, color-mix(in oklab, var(--secondary) 72%, var(--background)), var(--background));
+  }
+
+  .dexter-report-paper {
+    position: relative;
+    min-height: calc(100vh - 9rem);
+    border: 2px solid var(--industrial);
+    background:
+      linear-gradient(90deg, color-mix(in oklab, var(--primary) 10%, transparent) 0 1px, transparent 1px 100%),
+      var(--card);
+    background-size: 100% 2.25rem;
+    box-shadow: 7px 7px 0 var(--industrial);
+    padding: clamp(1.5rem, 4vw, 4.5rem);
+  }
+
+  .dexter-report-paper::selection,
+  .dexter-report-paper *::selection {
+    background: color-mix(in oklab, var(--lab-sign-glow) 42%, transparent);
+    color: var(--foreground);
+  }
+
+  .dexter-report-paragraph {
+    margin-top: 1.35rem;
+    color: color-mix(in oklab, var(--foreground) 76%, var(--muted-foreground));
+    font-size: 1.03rem;
+    line-height: 2.05;
+    text-wrap: pretty;
+  }
+
+  .dexter-report-selected {
+    color: var(--foreground);
+    text-decoration-line: underline;
+    text-decoration-style: wavy;
+    text-decoration-color: var(--primary);
+    text-decoration-thickness: 1.5px;
+    text-underline-offset: 0.32em;
+    background: color-mix(in oklab, var(--lab-sign-glow) 16%, transparent);
+  }
+
+  .dexter-reference-linked {
+    background: color-mix(in oklab, var(--primary) 12%, transparent);
+  }
+
+  .dexter-reference-panel {
+    border: 2px solid var(--industrial);
+    background: color-mix(in oklab, var(--card) 82%, var(--secondary));
+    padding: 1rem;
+    box-shadow: 4px 4px 0 var(--industrial);
+  }
+
+  .dexter-context-menu,
+  .dexter-edit-prompt {
+    position: fixed;
+    z-index: 60;
+    width: 18rem;
+    border: 2px solid var(--industrial);
+    background: var(--popover);
+    color: var(--popover-foreground);
+    box-shadow: 5px 5px 0 var(--industrial);
+    padding: 0.35rem;
+  }
+
+  .dexter-context-menu button {
+    display: block;
+    width: 100%;
+    padding: 0.65rem 0.75rem;
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .dexter-context-menu button:hover {
+    background: var(--primary);
+    color: var(--primary-foreground);
+  }
+
+  .dexter-edit-prompt {
+    width: 21rem;
+    padding: 1rem;
+  }
+
+  .dexter-lasso-active {
+    cursor: crosshair;
+  }
+
+  .dexter-lasso-box {
+    position: fixed;
+    z-index: 70;
+    pointer-events: none;
+    border: 2px dashed var(--primary);
+    background: color-mix(in oklab, var(--primary) 14%, transparent);
+    box-shadow: 0 0 0 9999px color-mix(in oklab, var(--background) 18%, transparent);
+  }
+
   .bg-industrial {
     background-color: var(--industrial);
   }
