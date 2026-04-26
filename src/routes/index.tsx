@@ -262,27 +262,32 @@ function HypothesisInputScreen() {
 }
 
 function WorkflowHeader({ title, children }: { title?: string; children?: ReactNode }) {
-  const goToPreviousScreen = useDexterStore((state) => state.goToPreviousScreen);
-  const currentScreen = useDexterStore((state) => state.currentScreen);
-  const canGoBack = currentScreen !== "HYPOTHESIS_INPUT" && currentScreen !== "LOADING";
-
   return (
     <header className="flex min-h-[60px] items-center justify-between gap-4 border-b-2 border-industrial bg-background px-5 py-3">
       <div className="flex min-w-0 items-center gap-4">
-        {canGoBack && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={goToPreviousScreen}
-            className="h-10 shrink-0 rounded-none border-2 border-industrial bg-secondary px-4 font-mono text-xs font-bold uppercase hover:bg-secondary"
-          >
-            Back
-          </Button>
-        )}
+        <WorkflowBackButton />
         {title && <p className="line-clamp-1 font-mono text-xs font-bold uppercase text-primary">{title}</p>}
       </div>
       {children}
     </header>
+  );
+}
+
+function WorkflowBackButton() {
+  const goToPreviousScreen = useDexterStore((state) => state.goToPreviousScreen);
+  const currentScreen = useDexterStore((state) => state.currentScreen);
+  const canGoBack = currentScreen !== "HYPOTHESIS_INPUT" && currentScreen !== "LOADING";
+
+  if (!canGoBack) return null;
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      onClick={goToPreviousScreen}
+      className="h-10 shrink-0 rounded-none border-2 border-industrial bg-secondary px-4 font-mono text-xs font-bold uppercase hover:bg-secondary"
+    >
+      Back
+    </Button>
   );
 }
 
