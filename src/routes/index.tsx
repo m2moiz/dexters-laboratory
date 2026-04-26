@@ -7,7 +7,7 @@ import { Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { useDexterStore } from "@/lib/dexter-store";
+import { type ReportHighlight, useDexterStore } from "@/lib/dexter-store";
 import { exampleHypotheses, type Paper, type PlanSection } from "@/lib/mock-plan";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +48,6 @@ const pressureColor = (pressure: number) => {
 };
 
 type LassoPoint = { x: number; y: number };
-type ReportHighlight = { key: string; reportId: string; start: number; end: number; text: string };
 
 const buildFreehandPath = (points: LassoPoint[], close = false) => {
   if (!points.length) return "";
