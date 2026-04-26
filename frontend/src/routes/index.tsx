@@ -1002,10 +1002,29 @@ const BUDGET_CATEGORY_COLORS: Record<string, string> = {
 function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
+  const highlights = useDexterStore((s) => s.reportHighlights);
+  const setHighlights = useDexterStore((s) => s.setReportHighlights);
+  const activeReference = useDexterStore((s) => s.activeReference);
+  const setActiveReference = useDexterStore((s) => s.setActiveReference);
   const [activeSection, setActiveSection] = useState<string>(PLAN_TOC[0].id);
   const [highlightedMaterialId, setHighlightedMaterialId] = useState<string | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const reportRef = useRef<HTMLDivElement | null>(null);
+
+  const [selectedText, setSelectedText] = useState("");
+  const [activeIds, setActiveIds] = useState<Set<string>>(() => new Set());
+  const [activeHighlightKey, setActiveHighlightKey] = useState<string | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    x: number; y: number; targetId: string | null; highlightKey: string | null;
+  } | null>(null);
+  const [promptBox, setPromptBox] = useState<{
+    x: number; y: number; action: string; pinned?: boolean;
+  } | null>(null);
+  const [correctionPrompt, setCorrectionPrompt] = useState("");
+  const [lasso, setLasso] = useState<{
+    active: boolean; drawing: boolean; points: LassoPoint[];
+  }>({ active: false, drawing: false, points: [] });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1023,6 +1042,87 @@ function PlanViewScreen() {
   }, []);
 
   const materialById = (id: string) => plan.materials.find((m) => m.id === id);
+
+  // --- annotation handlers ---
+
+  const captureSelection = () => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim() ?? "";
+    if (!text) return;
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const startEl = range?.startContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const endEl = range?.endContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const element = startEl && startEl === endEl ? startEl : null;
+    const id = element?.dataset.reportId;
+    if (!id || !range) return;
+    const start = textOffsetInElement(element, range.startContainer, range.startOffset);
+    const end = textOffsetInElement(element, range.endContainer, range.endOffset);
+    if (start === end) return;
+    setActiveIds(new Set([id]));
+    const highlightKey = `${id}-${Date.now()}-${highlights.length}`;
+    setHighlights((c) => [...c, { key: highlightKey, reportId: id, start: Math.min(start, end), end: Math.max(start, end), text }]);
+    setSelectedText(text);
+    setActiveHighlightKey(highlightKey);
+    setCorrectionPrompt("");
+    setPromptBox(null);
+    setContextMenu(null);
+    selection?.removeAllRanges();
+  };
+
+  const openContextMenu = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    const reportEl = target.closest("[data-report-id]") as HTMLElement | null;
+    const highlightEl = target.closest("[data-highlight-key]") as HTMLElement | null;
+    if (!reportEl && !selectedText) return;
+    event.preventDefault();
+    const id = reportEl?.dataset.reportId;
+    const highlightKey = highlightEl?.dataset.highlightKey ?? null;
+    if (id && !activeIds.has(id)) {
+      setActiveIds(new Set([id]));
+      setSelectedText(highlightKey ? (highlightEl?.innerText.trim() ?? "") : reportEl!.innerText.trim());
+    }
+    setActiveHighlightKey(highlightKey);
+    setContextMenu({ x: event.clientX, y: event.clientY, targetId: id ?? null, highlightKey });
+    setPromptBox(null);
+  };
+
+  const undoHighlight = () => {
+    if (!contextMenu?.highlightKey) return;
+    setHighlights((c) => c.filter((h) => h.key !== contextMenu.highlightKey));
+    setContextMenu(null);
+  };
+
+  const startPrompt = (action: string) => {
+    if (!contextMenu) return;
+    setCorrectionPrompt("");
+    setActiveHighlightKey(contextMenu.highlightKey);
+    setPromptBox({ x: contextMenu.x, y: contextMenu.y, action });
+    setContextMenu(null);
+  };
+
+  const queueCorrection = () => {
+    if (!activeHighlightKey || !correctionPrompt.trim()) return;
+    setHighlights((c) =>
+      c.map((h) => (h.key === activeHighlightKey ? { ...h, correction: correctionPrompt.trim() } : h))
+    );
+    setCorrectionPrompt("");
+    setPromptBox(null);
+  };
+
+  const closeTransientPrompt = () => {
+    window.setTimeout(() => {
+      setPromptBox((c) => (c?.pinned ? c : null));
+    }, 80);
+  };
+
+  const openQueuedPrompt = (highlight: ReportHighlight, element: HTMLElement) => {
+    const rect = element.getBoundingClientRect();
+    setSelectedText(highlight.text);
+    setActiveHighlightKey(highlight.key);
+    setCorrectionPrompt(highlight.correction ?? "");
+    setContextMenu(null);
+    setPromptBox({ x: rect.left + rect.width / 2, y: rect.bottom + 12, action: "Edit adjustment", pinned: false });
+  };
 
   const noveltyBadge =
     plan.novelty_check.status === "novel"
@@ -1131,7 +1231,39 @@ function PlanViewScreen() {
   );
 
   return (
-    <main className={cn(screenClass, "bg-cream-50 min-h-screen")}>
+    <main
+      className={cn(screenClass, "bg-cream-50 min-h-screen")}
+      onClick={() => setContextMenu(null)}
+      onPointerMove={(event) => {
+        if (lasso.drawing) {
+          setLasso((c) => ({
+            ...c,
+            points: [...c.points, { x: event.clientX, y: event.clientY }],
+          }));
+        }
+      }}
+      onPointerUp={() => {
+        if (!lasso.drawing) return;
+        const picked = [
+          ...(reportRef.current?.querySelectorAll<HTMLElement>("[data-report-id]") ?? []),
+        ].filter((el) => {
+          const rect = el.getBoundingClientRect();
+          return lassoTouchesRect(lasso.points, rect);
+        });
+        const pickedIds = picked.map((el) => el.dataset.reportId).filter(Boolean) as string[];
+        setActiveIds(new Set(pickedIds));
+        setHighlights((c) => [
+          ...c,
+          ...picked.map((el, i) => {
+            const reportId = el.dataset.reportId ?? `lasso-${i}`;
+            const text = el.innerText.trim();
+            return { key: `${reportId}-lasso-${Date.now()}-${i}`, reportId, start: 0, end: text.length, text };
+          }),
+        ]);
+        setSelectedText(picked.map((el) => el.innerText.trim()).join(" "));
+        setLasso({ active: false, drawing: false, points: [] });
+      }}
+    >
       {/* Top banner */}
       <header className="sticky top-0 z-20 border-b-2 border-ink bg-cream-100 px-8 py-4 min-h-[80px] flex items-center gap-6">
         <WorkflowBackButton />
@@ -1182,17 +1314,29 @@ function PlanViewScreen() {
         </aside>
 
         {/* Main column */}
-        <section className="min-w-0">
+        <article
+          ref={reportRef}
+          className={cn("min-w-0", lasso.active && "dexter-lasso-active")}
+          onMouseUp={captureSelection}
+          onContextMenu={openContextMenu}
+          onPointerDown={(event) => {
+            if (!lasso.active) return;
+            event.preventDefault();
+            setLasso({ active: true, drawing: true, points: [{ x: event.clientX, y: event.clientY }] });
+          }}
+        >
           {/* Summary */}
           {sectionCard(
             "summary",
             "§ SUMMARY",
             "Summary",
             <p
+              data-report-id="summary"
               className="font-display text-ink"
               style={{ fontSize: "22px", lineHeight: 1.5, fontWeight: 500 }}
             >
-              {plan.summary}
+              <HighlightableText text={plan.summary} reportId="summary" highlights={highlights}
+                onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
             </p>,
           )}
 
@@ -1210,8 +1354,9 @@ function PlanViewScreen() {
               >
                 {plan.novelty_check.status.replace(/_/g, " ")}
               </span>
-              <p className="text-base leading-7 text-ink">
-                {plan.novelty_check.summary}
+              <p data-report-id="novelty-summary" className="text-base leading-7 text-ink">
+                <HighlightableText text={plan.novelty_check.summary} reportId="novelty-summary" highlights={highlights}
+                  onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
               </p>
               {plan.novelty_check.related_paper_ids.length > 0 && (
                 <p className="mt-3 text-sm text-concrete">
@@ -1229,9 +1374,10 @@ function PlanViewScreen() {
             "Assumptions",
             <ul className="space-y-2">
               {plan.assumptions.map((a, i) => (
-                <li key={i} className="text-base leading-7 text-ink">
+                <li key={i} data-report-id={`assumption-${i}`} className="text-base leading-7 text-ink">
                   <span className="text-concrete mr-2">•</span>
-                  {a}
+                  <HighlightableText text={a} reportId={`assumption-${i}`} highlights={highlights}
+                    onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
                 </li>
               ))}
             </ul>,
@@ -1251,8 +1397,9 @@ function PlanViewScreen() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-lg text-ink">{step.title}</h3>
-                      <p className="text-base text-ink mt-1" style={{ lineHeight: 1.6 }}>
-                        {step.description}
+                      <p data-report-id={`step-${step.step_number}`} className="text-base text-ink mt-1" style={{ lineHeight: 1.6 }}>
+                        <HighlightableText text={step.description} reportId={`step-${step.step_number}`} highlights={highlights}
+                          onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
                       </p>
                       {step.duration_minutes > 0 && (
                         <p className="mt-2 font-mono text-[11px] uppercase text-concrete">
@@ -1294,6 +1441,7 @@ function PlanViewScreen() {
                     <tr
                       key={m.id}
                       id={`material-row-${m.id}`}
+                      data-report-id={`material-${m.id}`}
                       className={cn(
                         "border-b border-chrome hover:bg-teal/5 transition-colors",
                         highlightedMaterialId === m.id && "bg-teal/10",
@@ -1381,7 +1529,7 @@ function PlanViewScreen() {
               <table className="w-full text-sm">
                 <tbody>
                   {plan.budget.lines.map((l, i) => (
-                    <tr key={i} className="border-b border-chrome">
+                    <tr key={i} data-report-id={`budget-${i}`} className="border-b border-chrome">
                       <td className="py-2 font-mono text-xs uppercase text-concrete w-40">{l.category}</td>
                       <td className="py-2 text-ink">{l.description}</td>
                       <td className="py-2 text-right font-mono">€{l.cost_eur.toLocaleString()}</td>
@@ -1411,7 +1559,7 @@ function PlanViewScreen() {
                 const widthPct = ((p.end_week - p.start_week + 1) / plan.timeline.total_weeks) * 100;
                 const leftPct = ((p.start_week - 1) / plan.timeline.total_weeks) * 100;
                 return (
-                  <div key={p.phase_number} className="flex items-center gap-3">
+                  <div key={p.phase_number} data-report-id={`phase-${p.phase_number}`} className="flex items-center gap-3">
                     <div
                       className="font-mono text-xs text-concrete shrink-0 text-right"
                       style={{ width: "20px" }}
@@ -1506,7 +1654,7 @@ function PlanViewScreen() {
             "Sources",
             <ul className="space-y-4">
               {plan.sources.map((s) => (
-                <li key={s.id} className="border-l-2 border-chrome pl-3">
+                <li key={s.id} data-report-id={`sourcecard-${s.id}`} className="border-l-2 border-chrome pl-3">
                   <div className="flex items-center gap-2 mb-1">
                     <span className="font-mono text-[10px] uppercase border border-ink px-1.5 py-0.5">
                       {s.kind}
@@ -1540,7 +1688,7 @@ function PlanViewScreen() {
           >
             {exportingPdf ? "PREPARING PDF..." : "I'M HAPPY WITH THIS"}
           </Button>
-        </section>
+        </article>
 
         {/* Right panel */}
         <aside className="hidden lg:block">
@@ -1573,9 +1721,66 @@ function PlanViewScreen() {
                 ))}
               </ul>
             )}
+
+            {highlights.filter((h) => h.correction).length > 0 && (
+              <section className="dexter-reference-panel mt-4">
+                <h2 className="font-mono text-xs font-bold uppercase text-primary">§ Queued corrections</h2>
+                <ul className="mt-4 space-y-3 text-sm">
+                  {highlights.filter((h) => h.correction).map((h) => (
+                    <li key={h.key} className="border-l-2 border-mustard pl-3">
+                      <span className="font-mono text-[10px] font-bold uppercase text-concrete">{h.reportId}</span>
+                      <p className="mt-1 line-clamp-2 text-xs italic text-ink-grey">"{h.text}"</p>
+                      <p className="mt-1 text-xs text-foreground">{h.correction}</p>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
           </div>
         </aside>
       </div>
+
+      {lasso.drawing && (
+        <svg className="dexter-lasso-svg" aria-hidden="true">
+          <path className="dexter-lasso-fill" d={buildFreehandPath(lasso.points, lasso.points.length > 2)} />
+          <path className="dexter-lasso-stroke" d={buildFreehandPath(lasso.points, lasso.points.length > 2)} />
+        </svg>
+      )}
+
+      {contextMenu && (
+        <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }}
+          onClick={(e) => e.stopPropagation()}>
+          {contextMenu.highlightKey && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
+          {contextMenu.highlightKey && (
+            <button type="button" onClick={() => startPrompt("Make adjustment")}>Make adjustment</button>
+          )}
+          <button type="button" onClick={() => {
+            setLasso((c) => ({ ...c, active: true }));
+            setContextMenu(null);
+          }}>Lasso select region</button>
+        </div>
+      )}
+
+      {promptBox && (
+        <div
+          className="dexter-edit-prompt"
+          style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }}
+          onMouseEnter={() => setPromptBox((c) => (c ? { ...c, pinned: true } : c))}
+          onClick={(e) => { e.stopPropagation(); setPromptBox((c) => (c ? { ...c, pinned: true } : c)); }}
+        >
+          <p className="font-mono text-[10px] font-bold uppercase text-primary">{promptBox.action}</p>
+          <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">"{selectedText}"</p>
+          <Textarea rows={4} value={correctionPrompt}
+            onChange={(e) => setCorrectionPrompt(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); queueCorrection(); } }}
+            autoFocus placeholder="Tell Dexter exactly how to revise this passage..."
+            className="mt-3 rounded-none border-2 border-industrial bg-background text-sm" />
+          <Button type="button" onClick={queueCorrection} disabled={!correctionPrompt.trim()}
+            className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary disabled:opacity-50">
+            Queue correction
+          </Button>
+        </div>
+      )}
     </main>
   );
 }
