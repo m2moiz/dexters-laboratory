@@ -505,6 +505,9 @@ function PaperHoverCard({ node, position }: { node: ForceNode | null; position: 
 function PaperDetailOverlay({ paper, onClose }: { paper: Paper | null; onClose: () => void }) {
   return (
     <div
+      onPointerDown={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
       className={cn(
         "pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/35 p-5 opacity-0 backdrop-blur-[2px] transition-opacity duration-200",
         paper && "pointer-events-auto opacity-100",
