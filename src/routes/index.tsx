@@ -30,9 +30,9 @@ export const Route = createFileRoute("/")({
 
 const screenClass = "min-h-screen bg-background text-foreground";
 const graphLayoutScale = 0.58;
-const graphNodeRadius = (influence: number) => 24 + influence * 26;
+const graphNodeRadius = (influence: number) => 21 + influence * 23;
 const indexFromPaperId = (id: string) => Number(id.replace(/\D/g, "")) || 1;
-const graphRingRadius = (index: number) => (index % 3 === 0 ? 86 : index % 3 === 1 ? 152 : 218) * graphLayoutScale;
+const graphRingRadius = (index: number) => (index % 3 === 0 ? 108 : index % 3 === 1 ? 184 : 268) * graphLayoutScale;
 const easedPressure = (value: number) => value * value * (3 - 2 * value);
 const pressureColor = (pressure: number) => {
   const stops = [
@@ -325,10 +325,10 @@ function LiteratureGraphScreen() {
         "link",
         forceLink<ForceNode, ForceLink>(linksRef.current)
           .id((node) => node.id)
-          .distance((link) => 132 - link.weight * 52)
-          .strength((link) => 0.1 + link.weight * 0.28),
+          .distance((link) => 178 - link.weight * 58)
+          .strength((link) => 0.08 + link.weight * 0.2),
       )
-      .force("charge", forceManyBody<ForceNode>().strength((node) => -145 - node.influence * 115))
+      .force("charge", forceManyBody<ForceNode>().strength((node) => -190 - node.influence * 125))
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + 18).strength(1))
       .force("radial", forceRadial<ForceNode>((node, index) => graphRingRadius(index), 0, 0).strength(0.13))
       .force("center", forceCenter(0, 0))
@@ -371,8 +371,8 @@ function LiteratureGraphScreen() {
           const distance = Math.max(Math.hypot(x, y), 1);
           const orbit = Math.atan2(y, x) + Math.PI / 2;
           const ringRadius = graphRingRadius(index);
-          const orbitalForce = 0.024 + node.influence * 0.014;
-          const waveForce = 0.026;
+          const orbitalForce = isHovered ? 0 : 0.008 + node.influence * 0.005;
+          const waveForce = isHovered ? 0 : 0.012;
           const centerPull = Math.min(distance, 360) * 0.00016;
           const radialError = distance - ringRadius;
           node.vx =
@@ -380,13 +380,17 @@ function LiteratureGraphScreen() {
             Math.cos(orbit) * orbitalForce +
             Math.sin(time / 820 + node.phase + index * 1.7) * waveForce -
             (x / distance) * centerPull -
-            (x / distance) * radialError * 0.006;
+            (x / distance) * radialError * 0.0038;
           node.vy =
             (node.vy ?? 0) +
             Math.sin(orbit) * orbitalForce +
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
             (y / distance) * centerPull -
-            (y / distance) * radialError * 0.006;
+            (y / distance) * radialError * 0.0038;
+          if (isHovered) {
+            node.vx = (node.vx ?? 0) * 0.52;
+            node.vy = (node.vy ?? 0) * 0.52;
+          }
         }
         if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
           const dx = (node.x ?? 0) - (hovered.x ?? 0);
@@ -402,7 +406,7 @@ function LiteratureGraphScreen() {
           node.vy = (node.vy ?? 0) + (dy / distance) * influence * 3.2;
         }
       });
-      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.34 : 0.16)).tick(2);
+      simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), hovered ? 0.2 : 0.1)).tick(1);
       const padding = Math.max(34, Math.min(graphSize.width, graphSize.height) * 0.055);
       const nodeExtents = nodes.map((node) => {
         const visualRadius = graphNodeRadius(node.influence) * (node.hoverScale ?? 1) + (bookmarkedNodeIds.has(node.id) ? 24 : 14);
