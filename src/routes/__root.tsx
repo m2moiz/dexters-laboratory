@@ -33,10 +33,14 @@ export const Route = createRootRoute({
       { name: "description", content: "Dexter turns hypotheses into runnable experiment plans." },
       { name: "author", content: "Dexter" },
       { property: "og:title", content: "Dexter | AI Experiment Plan Generator" },
-      { property: "og:description", content: "From hypothesis to runnable experiment." },
+      { property: "og:description", content: "Dexter turns hypotheses into runnable experiment plans." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Dexter" },
+      { name: "twitter:title", content: "Dexter | AI Experiment Plan Generator" },
+      { name: "twitter:description", content: "Dexter turns hypotheses into runnable experiment plans." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2922c3d-3021-4234-8824-2217c0e2f330/id-preview-1a503d28--e642a5d1-5dad-4421-bae1-ed8eec222dd2.lovable.app-1777191287726.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/e2922c3d-3021-4234-8824-2217c0e2f330/id-preview-1a503d28--e642a5d1-5dad-4421-bae1-ed8eec222dd2.lovable.app-1777191287726.png" },
     ],
     links: [
       {
