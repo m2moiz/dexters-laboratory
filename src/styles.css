@@ -248,6 +248,7 @@
 
   .dexter-neon-sign {
     overflow: visible;
+    background-color: color-mix(in oklab, var(--lab-sign-shade) 18%, var(--card));
     transform-origin: center;
     animation:
       dexter-sign-power 1900ms steps(1, end) 1460ms both,
@@ -256,7 +257,7 @@
 
   .dexter-sign-title {
     animation: dexter-letter-glow 1900ms steps(1, end) 1460ms both;
-    color: var(--primary);
+    color: var(--lab-sign-fill);
     letter-spacing: 0.02em;
     -webkit-text-stroke: 2px var(--industrial);
     text-shadow: 3px 3px 0 var(--industrial);
@@ -269,7 +270,7 @@
     border: 2px solid var(--industrial);
     background: var(--accent);
     opacity: 0;
-    box-shadow: 0 0 0 color-mix(in oklab, var(--accent) 0%, transparent);
+    box-shadow: 0 0 0 color-mix(in oklab, var(--lab-sign-glow) 0%, transparent);
   }
 
   .dexter-spark-a {
