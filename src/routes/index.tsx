@@ -329,6 +329,7 @@ function LiteratureGraphScreen() {
       )
       .force("charge", forceManyBody<ForceNode>().strength((node) => -145 - node.influence * 115))
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 12).strength(0.78))
+      .force("radial", forceRadial<ForceNode>((node, index) => (index % 3 === 0 ? 86 : index % 3 === 1 ? 152 : 218) * graphLayoutScale, 0, 0).strength(0.055))
       .force("center", forceCenter(0, 0))
       .alpha(1)
       .alphaDecay(0.0016)
@@ -370,7 +371,7 @@ function LiteratureGraphScreen() {
           const orbit = Math.atan2(y, x) + Math.PI / 2;
           const orbitalForce = 0.024 + node.influence * 0.014;
           const waveForce = 0.026;
-          const centerPull = Math.min(distance, 360) * 0.00024;
+          const centerPull = Math.min(distance, 360) * 0.00016;
           node.vx =
             (node.vx ?? 0) +
             Math.cos(orbit) * orbitalForce +
