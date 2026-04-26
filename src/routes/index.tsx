@@ -918,7 +918,14 @@ function PlanViewScreen() {
         });
         const pickedIds = picked.map((element) => element.dataset.reportId).filter(Boolean) as string[];
         setActiveIds(new Set(pickedIds));
-        setHighlightedIds((current) => new Set([...current, ...pickedIds]));
+        setHighlights((current) => [
+          ...current,
+          ...picked.map((element, index) => {
+            const reportId = element.dataset.reportId ?? `lasso-${index}`;
+            const text = element.innerText.trim();
+            return { key: `${reportId}-lasso-${Date.now()}-${index}`, reportId, start: 0, end: text.length, text };
+          }),
+        ]);
         setSelectedText(picked.map((element) => element.innerText.trim()).join(" "));
         setLasso({ active: false, drawing: false, points: [] });
       }}
@@ -956,8 +963,8 @@ function PlanViewScreen() {
           >
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
-            <p className={cn("mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground", highlightedIds.has("hypothesis") && "dexter-report-selected", activeIds.has("hypothesis") && "dexter-report-active")} data-report-id="hypothesis">
-              {hypothesis}
+            <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
+              <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} />
             </p>
             {plan.sections.map((section, sectionIndex) => (
               <section
@@ -975,9 +982,9 @@ function PlanViewScreen() {
                     <p
                       key={paragraph}
                       data-report-id={itemId}
-                      className={cn("dexter-report-paragraph", highlightedIds.has(itemId) && "dexter-report-selected", activeIds.has(itemId) && "dexter-report-active", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
+                      className={cn("dexter-report-paragraph", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
                     >
-                      {paragraph}
+                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} />
                     </p>
                   );
                 })}
@@ -1010,7 +1017,7 @@ function PlanViewScreen() {
       </div>
       {contextMenu && (
         <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
-          {contextMenu.targetId && highlightedIds.has(contextMenu.targetId) && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
+          {contextMenu.highlightKey && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
           <button type="button" onClick={goToReference}>Go to reference</button>
           <button type="button" onClick={() => startPrompt("Suggest rewrite")}>Suggest rewrite</button>
           <button type="button" onClick={() => startPrompt("Clarify this")}>Clarify this</button>
