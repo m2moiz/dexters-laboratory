@@ -966,6 +966,7 @@ function PlanViewScreen() {
       </div>
       {contextMenu && (
         <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
+          {contextMenu.targetId && highlightedIds.has(contextMenu.targetId) && <button type="button" onClick={undoHighlight}>Undo highlight</button>}
           <button type="button" onClick={goToReference}>Go to reference</button>
           <button type="button" onClick={() => startPrompt("Suggest rewrite")}>Suggest rewrite</button>
           <button type="button" onClick={() => startPrompt("Clarify this")}>Clarify this</button>
