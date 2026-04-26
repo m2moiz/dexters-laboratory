@@ -1,33 +1,62 @@
-Plan to update the initial loading screen animation
+Yes — I understand. You want the generated plan/report to stop feeling like stacked UI blocks and instead read like a real document: flowing report text, warm paper-like styling, selectable passages, and an editor-style contextual menu for references and targeted rewrite instructions.
 
-1. Replace the current “DEXTER” letter reveal
-- Remove the simple text-only loading treatment from the first screen.
-- Replace it with a short animated “lab opening” sequence that still feels native to the app’s current industrial/scientific visual style.
+Plan:
 
-2. Create a Dexter’s Laboratory-inspired homage without copying exact assets
-- Use abstract lab motifs: sliding mechanical doors, teal-blue instrument panels, blinking indicator lights, schematic grid lines, flask/test-tube silhouettes, and a central “DEXTER LABORATORY” lockup.
-- Keep it as a visual homage rather than using copyrighted show artwork or characters.
-- Keep the color language aligned with the app: cream paper background, black industrial outlines, teal-blue primary accents, and restrained red/orange only if needed for tiny indicator lights.
+1. Redesign the report view as a warm, readable document
+   - Replace the current block/card layout in the generated report page with a single report-paper surface.
+   - Keep the current app font system, but use it more like a polished research report: title, abstract/hypothesis, section headings, body paragraphs, citations, and margin notes.
+   - Use the existing warm cream/card theme with subtle teal/industrial accents, avoiding heavy boxed sections.
 
-3. Make the animation feel like an opening sequence
-- Sequence the motion in stages:
-  - background grid and lab panels fade/slide in
-  - mechanical doors or shutters open
-  - small lab lights blink and instruments pulse
-  - “DEXTER’S LABORATORY” appears as the final title moment
-  - transition smoothly into the hypothesis input screen
-- Maintain the existing automatic transition timing, but likely extend it slightly from ~2s to ~3–3.5s so the opening has enough time to read.
+2. Make report text interactively selectable
+   - Render each sentence/paragraph as selectable text instead of isolated cards.
+   - Track selected text and its location in the report.
+   - When text is selected, apply an initial highlight while selecting, then convert the selected passage into a squiggly underline treatment so it feels like an annotated manuscript.
 
-4. Add CSS keyframes/utilities in the existing style system
-- Add custom keyframes in `src/styles.css` for door opening, panel slide, blinking lights, title reveal, scan-line movement, and subtle instrument pulsing.
-- Keep animations CSS-based for smoothness and avoid adding dependencies.
+3. Add a custom right-click/context menu
+   - On right-click over report text or an existing selection, open a themed contextual menu.
+   - Include actions such as:
+     - “Go to reference”
+     - “Suggest rewrite”
+     - “Clarify this”
+     - “Make more rigorous”
+     - “Add caveat”
+     - “Lasso select region”
+   - The menu will match the Dexter theme rather than using the browser’s default menu.
 
-5. Update only the loading screen component
-- Modify `LoadingScreen` in `src/routes/index.tsx` to render the new animated lab composition.
-- Preserve the existing store flow so the app still automatically advances to `HYPOTHESIS_INPUT` after the intro.
-- Ensure the design remains responsive for the current preview size and smaller screens.
+4. Connect “Go to reference” to the literature/source area
+   - Associate report sentences with the available mock papers/citations.
+   - Clicking “Go to reference” will scroll/highlight the citation or open a small reference panel showing the relevant paper/source.
+   - For now, this will be modeled from the existing mock literature data; later it can connect to real generated citations when the backend exists.
 
-Technical notes
-- Files to edit: `src/routes/index.tsx` and `src/styles.css`.
-- No new route files or package dependencies are needed.
-- I will verify with a production build after implementation.
+5. Add guided edit prompts for selected text
+   - After choosing an edit action, show a small prompt box near the selection.
+   - The selected passage will be quoted/contextualized, and the user can type a guided instruction like “make this more cautious” or “add comparison to trehalose literature.”
+   - Since the app currently uses mock data, this will initially capture/display the requested edit rather than calling a real LLM.
+
+6. Add a lasso selection mode
+   - Add a “lasso select region” mode from the context menu.
+   - While active, the cursor can drag over a rectangular/freeform region of the report.
+   - Text intersecting that region will become part of a bulk selection, then the same guided prompt menu can be used for that region.
+
+Technical details:
+
+- Main changes will be in `src/routes/index.tsx` and `src/styles.css`.
+- The current `PlanViewScreen`, `PlanCard`, and side list layout will be refactored into a document-style report component.
+- I’ll add local React state for:
+  - current selected text
+  - selected paragraph/sentence IDs
+  - context menu position
+  - active reference highlight
+  - active prompt/edit instruction
+  - lasso mode and lasso bounds
+- CSS will add:
+  - paper/report typography
+  - warm document background
+  - custom text selection styling
+  - squiggly underline annotation style
+  - themed context menu and prompt popover
+  - lasso overlay visuals
+
+Expected result:
+
+The report page will feel like a real generated scientific report instead of cards. Users will be able to select text, right-click for meaningful actions, jump to references, and create targeted edit prompts on individual sentences or larger lasso-selected regions.

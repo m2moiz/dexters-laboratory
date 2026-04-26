@@ -714,7 +714,21 @@ function PlanViewScreen() {
   const hypothesis = useDexterStore((state) => state.hypothesis);
   const plan = useDexterStore((state) => state.plan);
   const [activeSection, setActiveSection] = useState(plan.sections[0].id);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [selectedText, setSelectedText] = useState("");
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
+  const [promptBox, setPromptBox] = useState<{ x: number; y: number; action: string } | null>(null);
+  const [activeReference, setActiveReference] = useState<string | null>(null);
+  const [lasso, setLasso] = useState<{ active: boolean; drawing: boolean; startX: number; startY: number; x: number; y: number }>({
+    active: false,
+    drawing: false,
+    startX: 0,
+    startY: 0,
+    x: 0,
+    y: 0,
+  });
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const reportRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -731,9 +745,81 @@ function PlanViewScreen() {
     return () => observer.disconnect();
   }, [plan.sections]);
 
+  const referenceFor = (itemId: string) => {
+    const digits = itemId.match(/\d+/g)?.map(Number) ?? [0, 0];
+    const index = (digits[0] + digits[1]) % plan.papers.length;
+    return plan.papers[index];
+  };
+
+  const captureSelection = () => {
+    const selection = window.getSelection();
+    const text = selection?.toString().trim() ?? "";
+    if (!text) return;
+    const range = selection?.rangeCount ? selection.getRangeAt(0) : null;
+    const element = range?.commonAncestorContainer.parentElement?.closest("[data-report-id]") as HTMLElement | null;
+    const id = element?.dataset.reportId;
+    if (!id) return;
+    setSelectedIds(new Set([id]));
+    setSelectedText(text);
+    selection?.removeAllRanges();
+  };
+
+  const openContextMenu = (event: React.MouseEvent) => {
+    const target = event.target as HTMLElement;
+    const reportElement = target.closest("[data-report-id]") as HTMLElement | null;
+    if (!reportElement && !selectedText) return;
+    event.preventDefault();
+    const id = reportElement?.dataset.reportId;
+    if (id && !selectedIds.has(id)) {
+      setSelectedIds(new Set([id]));
+      setSelectedText(reportElement.innerText.trim());
+    }
+    setContextMenu({ x: event.clientX, y: event.clientY });
+    setPromptBox(null);
+  };
+
+  const goToReference = () => {
+    const id = [...selectedIds][0];
+    if (!id) return;
+    const paper = referenceFor(id);
+    setActiveReference(paper.id);
+    setContextMenu(null);
+    document.getElementById(`reference-${paper.id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
+  const startPrompt = (action: string) => {
+    if (!contextMenu) return;
+    setPromptBox({ x: contextMenu.x, y: contextMenu.y, action });
+    setContextMenu(null);
+  };
+
+  const lassoStyle = {
+    left: Math.min(lasso.startX, lasso.x),
+    top: Math.min(lasso.startY, lasso.y),
+    width: Math.abs(lasso.x - lasso.startX),
+    height: Math.abs(lasso.y - lasso.startY),
+  };
+
   return (
-    <main className={screenClass}>
-      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background px-5 py-4 lg:grid-cols-[1fr_auto] lg:px-8">
+    <main
+      className={cn(screenClass, "dexter-report-stage")}
+      onClick={() => setContextMenu(null)}
+      onPointerMove={(event) => {
+        if (lasso.drawing) setLasso((current) => ({ ...current, x: event.clientX, y: event.clientY }));
+      }}
+      onPointerUp={() => {
+        if (!lasso.drawing) return;
+        const box = { left: Math.min(lasso.startX, lasso.x), right: Math.max(lasso.startX, lasso.x), top: Math.min(lasso.startY, lasso.y), bottom: Math.max(lasso.startY, lasso.y) };
+        const picked = [...(reportRef.current?.querySelectorAll<HTMLElement>("[data-report-id]") ?? [])].filter((element) => {
+          const rect = element.getBoundingClientRect();
+          return rect.left < box.right && rect.right > box.left && rect.top < box.bottom && rect.bottom > box.top;
+        });
+        setSelectedIds(new Set(picked.map((element) => element.dataset.reportId).filter(Boolean) as string[]));
+        setSelectedText(picked.map((element) => element.innerText.trim()).join(" "));
+        setLasso((current) => ({ ...current, active: false, drawing: false }));
+      }}
+    >
+      <header className="sticky top-0 z-20 grid min-h-20 grid-cols-1 items-center gap-4 border-b-2 border-industrial bg-background/95 px-5 py-4 backdrop-blur lg:grid-cols-[1fr_auto] lg:px-8">
         <p className="line-clamp-2 max-w-4xl text-xs leading-5 text-muted-foreground">{hypothesis}</p>
         <div className="grid grid-cols-3 gap-5 text-right">
           {plan.metrics.map((metric) => (
@@ -743,82 +829,100 @@ function PlanViewScreen() {
           ))}
         </div>
       </header>
-      <div className="grid grid-cols-1 gap-8 px-5 py-8 lg:grid-cols-[25%_55%_20%] lg:px-8">
+      <div className="grid grid-cols-1 gap-8 px-5 py-8 lg:grid-cols-[18%_minmax(0,1fr)_24%] lg:px-8">
         <aside className="lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)]">
-          <p className="font-mono text-xs font-bold uppercase text-primary">Table of contents</p>
-          <nav className="mt-5 space-y-3">
+          <p className="font-mono text-xs font-bold uppercase text-primary">Contents</p>
+          <nav className="mt-5 space-y-2">
             {plan.sections.map((section) => (
-              <a
-                key={section.id}
-                href={`#${section.id}`}
-                className={cn(
-                  "block border-2 border-industrial px-4 py-3 font-mono text-xs font-bold uppercase transition-colors",
-                  activeSection === section.id ? "bg-primary text-primary-foreground" : "bg-card",
-                )}
-              >
-                {section.title}
-              </a>
+              <a key={section.id} href={`#${section.id}`} className={cn("block border-l-4 px-3 py-2 font-mono text-xs font-bold uppercase transition-colors", activeSection === section.id ? "border-primary bg-secondary text-foreground" : "border-transparent text-muted-foreground hover:border-primary")}>{section.title}</a>
             ))}
           </nav>
         </aside>
-        <section className="space-y-7">
-          {plan.sections.map((section) => (
-            <PlanCard
-              key={section.id}
-              section={section}
-              refCallback={(element) => {
-                sectionRefs.current[section.id] = element;
-              }}
-            />
-          ))}
-          <Button className="dexter-cta-shadow h-16 w-full rounded-none border-2 border-industrial bg-accent font-mono text-base font-bold uppercase text-accent-foreground hover:bg-accent hover:shadow-[8px_8px_0px_var(--industrial)]">
-            I'M HAPPY WITH THIS
-          </Button>
+        <section className="min-w-0">
+          <article
+            ref={reportRef}
+            className={cn("dexter-report-paper", lasso.active && "dexter-lasso-active")}
+            onMouseUp={captureSelection}
+            onContextMenu={openContextMenu}
+            onPointerDown={(event) => {
+              if (!lasso.active) return;
+              event.preventDefault();
+              setLasso({ active: true, drawing: true, startX: event.clientX, startY: event.clientY, x: event.clientX, y: event.clientY });
+            }}
+          >
+            <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
+            <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
+            <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
+              {hypothesis}
+            </p>
+            {plan.sections.map((section, sectionIndex) => (
+              <section
+                key={section.id}
+                id={section.id}
+                ref={(element) => {
+                  sectionRefs.current[section.id] = element;
+                }}
+                className="scroll-mt-28"
+              >
+                <h2 className="mt-12 font-display text-3xl font-semibold">{section.title}</h2>
+                {section.content.map((paragraph, paragraphIndex) => {
+                  const itemId = `${sectionIndex}-${paragraphIndex}`;
+                  return (
+                    <p
+                      key={paragraph}
+                      data-report-id={itemId}
+                      className={cn("dexter-report-paragraph", selectedIds.has(itemId) && "dexter-report-selected", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
+                    >
+                      {paragraph}
+                    </p>
+                  );
+                })}
+              </section>
+            ))}
+            <Button className="dexter-cta-shadow mt-12 h-16 w-full rounded-none border-2 border-industrial bg-accent font-mono text-base font-bold uppercase text-accent-foreground hover:bg-accent hover:shadow-[8px_8px_0px_var(--industrial)]">
+              I'M HAPPY WITH THIS
+            </Button>
+          </article>
         </section>
-        <aside className="space-y-6 lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)]">
-          <SideList title="Citations" items={plan.citations} />
-          <SideList title="Comments" items={plan.comments} />
+        <aside className="space-y-6 lg:sticky lg:top-28 lg:h-[calc(100vh-8rem)] lg:overflow-auto">
+          <section className="dexter-reference-panel">
+            <h2 className="font-mono text-xs font-bold uppercase text-primary">References</h2>
+            <div className="mt-4 space-y-3">
+              {plan.papers.map((paper) => (
+                <button key={paper.id} id={`reference-${paper.id}`} type="button" onClick={() => setActiveReference(paper.id)} className={cn("w-full border-l-4 bg-secondary p-3 text-left text-sm leading-5 transition-colors", activeReference === paper.id ? "border-primary" : "border-transparent")}>
+                  <span className="font-mono text-[10px] font-bold uppercase text-primary">{paper.id} / {paper.year}</span>
+                  <span className="mt-1 block font-medium">{paper.title}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+          <section className="dexter-reference-panel">
+            <h2 className="font-mono text-xs font-bold uppercase text-primary">Notes</h2>
+            <ul className="mt-4 space-y-3 text-sm leading-6">
+              {plan.comments.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </section>
         </aside>
       </div>
+      {contextMenu && (
+        <div className="dexter-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} onClick={(event) => event.stopPropagation()}>
+          <button type="button" onClick={goToReference}>Go to reference</button>
+          <button type="button" onClick={() => startPrompt("Suggest rewrite")}>Suggest rewrite</button>
+          <button type="button" onClick={() => startPrompt("Clarify this")}>Clarify this</button>
+          <button type="button" onClick={() => startPrompt("Make more rigorous")}>Make more rigorous</button>
+          <button type="button" onClick={() => startPrompt("Add caveat")}>Add caveat</button>
+          <button type="button" onClick={() => { setLasso((current) => ({ ...current, active: true })); setContextMenu(null); }}>Lasso select region</button>
+        </div>
+      )}
+      {promptBox && (
+        <div className="dexter-edit-prompt" style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }}>
+          <p className="font-mono text-[10px] font-bold uppercase text-primary">{promptBox.action}</p>
+          <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">“{selectedText}”</p>
+          <Textarea rows={4} placeholder="Tell Dexter exactly how to revise this passage..." className="mt-3 rounded-none border-2 border-industrial bg-background text-sm" />
+          <Button className="mt-3 h-10 w-full rounded-none border-2 border-industrial bg-primary font-mono text-xs font-bold uppercase text-primary-foreground hover:bg-primary">Queue guided edit</Button>
+        </div>
+      )}
+      {lasso.drawing && <div className="dexter-lasso-box" style={lassoStyle} />}
     </main>
-  );
-}
-
-function PlanCard({
-  section,
-  refCallback,
-}: {
-  section: PlanSection;
-  refCallback: (element: HTMLElement | null) => void;
-}) {
-  return (
-    <article
-      id={section.id}
-      ref={refCallback}
-      className="dexter-shadow relative scroll-mt-28 border-2 border-industrial bg-card p-7"
-    >
-      <span className="absolute right-4 top-4 font-mono text-xs font-bold uppercase text-primary">
-        {section.label}
-      </span>
-      <h2 className="pr-32 font-display text-4xl font-semibold">{section.title}</h2>
-      <div className="mt-6 space-y-4 text-base leading-8 text-muted-foreground">
-        {section.content.map((paragraph) => (
-          <p key={paragraph}>{paragraph}</p>
-        ))}
-      </div>
-    </article>
-  );
-}
-
-function SideList({ title, items }: { title: string; items: string[] }) {
-  return (
-    <section className="border-2 border-industrial bg-secondary p-4">
-      <h2 className="font-mono text-xs font-bold uppercase text-primary">{title}</h2>
-      <ul className="mt-4 space-y-3 text-sm leading-6">
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </section>
   );
 }
