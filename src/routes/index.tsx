@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { forceCenter, forceCollide, forceLink, forceManyBody, forceSimulation } from "d3-force";
 import { Bookmark } from "lucide-react";
@@ -714,7 +714,7 @@ function HighlightableText({ text, reportId, highlights }: { text: string; repor
     .sort((a, b) => a.start - b.start);
   if (!sortedHighlights.length) return <>{text}</>;
 
-  const nodes: React.ReactNode[] = [];
+  const nodes: ReactNode[] = [];
   let cursor = 0;
   sortedHighlights.forEach((highlight) => {
     const start = Math.max(cursor, Math.min(highlight.start, text.length));
