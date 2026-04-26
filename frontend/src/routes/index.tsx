@@ -412,6 +412,10 @@ function LiteratureGraphScreen() {
     linksRef.current = graphData.links.map((link) => ({ ...link }));
     transformRef.current = { scale: 1, x: 0, y: 0 };
 
+    const nodeCount = nodesRef.current.length;
+    const repulsionScale = Math.min(1, nodeCount / 6);
+    const centerStrength = nodeCount < 4 ? 0.3 : 0.05;
+
     const simulation = forceSimulation<ForceNode>(nodesRef.current)
       .force(
         "link",
@@ -420,9 +424,9 @@ function LiteratureGraphScreen() {
           .distance((link) => 210 - link.weight * 95)
           .strength((link) => 0.06 + link.weight * 0.22),
       )
-      .force("charge", forceManyBody<ForceNode>().strength((node) => -380 - node.influence * 240))
+      .force("charge", forceManyBody<ForceNode>().strength((node) => (-380 - node.influence * 240) * repulsionScale))
       .force("collide", forceCollide<ForceNode>().radius((node) => graphNodeRadius(node.influence) + 26).strength(0.82))
-      .force("center", forceCenter(0, 0))
+      .force("center", forceCenter(0, 0).strength(centerStrength))
       .alpha(1)
       .alphaDecay(0.0016)
       .alphaMin(0.08)
@@ -494,7 +498,9 @@ function LiteratureGraphScreen() {
       const maxX = Math.max(...xs) + 115;
       const minY = Math.min(...ys) - 115;
       const maxY = Math.max(...ys) + 115;
-      const scale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
+      const fitScale = Math.min(graphSize.width / Math.max(maxX - minX, 1), graphSize.height / Math.max(maxY - minY, 1), 1.7);
+      const minScale = Math.max(0.6, Math.min(1.0, 4 / Math.max(nodes.length, 1)));
+      const scale = Math.max(minScale, fitScale);
       const nextTransform = {
         scale,
         x: graphSize.width / 2 - ((minX + maxX) / 2) * scale,
