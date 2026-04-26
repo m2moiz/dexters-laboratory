@@ -706,6 +706,15 @@
   to { opacity: 1; }
 }
 
+.dexter-loading-bar {
+  animation: dexter-loading-bar 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@keyframes dexter-loading-bar {
+  0%   { transform: translateX(-100%); }
+  60%  { transform: translateX(220%); }
+  100% { transform: translateX(220%); }
+}
+
 @keyframes dexter-grid-wake {
   from { opacity: 0; transform: scale(1.02); }
   to { opacity: 1; transform: scale(1); }
