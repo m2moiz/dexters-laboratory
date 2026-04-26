@@ -326,9 +326,12 @@ function LiteratureGraphScreen() {
 
     const render = (time: number) => {
       const nodes = nodesRef.current;
+      const hovered = hoveredNode ? nodes.find((node) => node.id === hoveredNode.id) : null;
       nodes.forEach((node, index) => {
-        const targetScale = node.id === hoveredNode?.id ? 1.26 : 1;
-        node.hoverScale = (node.hoverScale ?? 1) + (targetScale - (node.hoverScale ?? 1)) * 0.16;
+        const isHovered = node.id === hoveredNode?.id;
+        const targetCharge = isHovered ? 1 : 0;
+        node.hoverCharge = Math.max(0, Math.min(1, (node.hoverCharge ?? 0) + (targetCharge - (node.hoverCharge ?? 0)) * (isHovered ? 0.018 : 0.12)));
+        node.hoverScale = 1 + (node.hoverCharge ?? 0) * 0.58;
         if (node !== dragRef.current) {
           const x = node.x ?? 0;
           const y = node.y ?? 0;
@@ -347,6 +350,14 @@ function LiteratureGraphScreen() {
             Math.sin(orbit) * orbitalForce +
             Math.cos(time / 900 + node.phase + index * 1.2) * waveForce -
             (y / distance) * centerPull;
+        }
+        if (hovered && hovered !== node && (hovered.hoverCharge ?? 0) > 0.02) {
+          const dx = (node.x ?? 0) - (hovered.x ?? 0);
+          const dy = (node.y ?? 0) - (hovered.y ?? 0);
+          const distance = Math.max(Math.hypot(dx, dy), 1);
+          const influence = Math.max(0, 1 - distance / 240) * (hovered.hoverCharge ?? 0);
+          node.vx = (node.vx ?? 0) + (dx / distance) * influence * 0.42;
+          node.vy = (node.vy ?? 0) + (dy / distance) * influence * 0.42;
         }
       });
       simulationRef.current?.alpha(Math.max(simulationRef.current.alpha(), 0.12)).tick(1);
