@@ -1118,7 +1118,7 @@ function PlanViewScreen() {
             <p className="font-mono text-xs font-bold uppercase tracking-[0.18em] text-primary">Generated experimental report</p>
             <h1 className="mt-4 font-display text-5xl font-semibold leading-tight">Trehalose cryopreservation feasibility plan</h1>
             <p className="mt-7 border-l-4 border-primary pl-5 text-lg leading-9 text-foreground" data-report-id="hypothesis">
-                      <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} onQueuedHover={openQueuedPrompt} />
+                      <HighlightableText text={hypothesis} reportId="hypothesis" highlights={highlights} onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
             </p>
             {plan.sections.map((section, sectionIndex) => (
               <section
@@ -1138,7 +1138,7 @@ function PlanViewScreen() {
                       data-report-id={itemId}
                       className={cn("dexter-report-paragraph", activeReference === referenceFor(itemId).id && "dexter-reference-linked")}
                     >
-                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} onQueuedHover={openQueuedPrompt} />
+                      <HighlightableText text={paragraph} reportId={itemId} highlights={highlights} onQueuedHover={openQueuedPrompt} onQueuedLeave={closeTransientPrompt} />
                     </p>
                   );
                 })}
@@ -1184,13 +1184,27 @@ function PlanViewScreen() {
         </div>
       )}
       {promptBox && (
-        <div className="dexter-edit-prompt" style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }} onClick={(event) => event.stopPropagation()}>
+        <div
+          className="dexter-edit-prompt"
+          style={{ left: Math.min(promptBox.x, window.innerWidth - 360), top: Math.min(promptBox.y, window.innerHeight - 260) }}
+          onMouseEnter={() => setPromptBox((current) => (current ? { ...current, pinned: true } : current))}
+          onClick={(event) => {
+            event.stopPropagation();
+            setPromptBox((current) => (current ? { ...current, pinned: true } : current));
+          }}
+        >
           <p className="font-mono text-[10px] font-bold uppercase text-primary">{promptBox.action}</p>
           <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">“{selectedText}”</p>
           <Textarea
             rows={4}
             value={correctionPrompt}
             onChange={(event) => setCorrectionPrompt(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                queueCorrection();
+              }
+            }}
             autoFocus
             placeholder="Tell Dexter exactly how to revise this passage..."
             className="mt-3 rounded-none border-2 border-industrial bg-background text-sm"
